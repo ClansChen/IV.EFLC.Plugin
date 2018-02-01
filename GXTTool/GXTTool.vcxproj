@@ -136,16 +136,6 @@
       <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClInclude Include="binary_file.hpp" />
-    <ClInclude Include="IVGXT.h" />
-    <ClInclude Include="uint32_hex.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="IVGXT.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="uint32_hex.cpp" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
