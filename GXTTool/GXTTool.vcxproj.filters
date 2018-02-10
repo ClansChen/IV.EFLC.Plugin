@@ -15,24 +15,18 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="binary_file.hpp">
+    <ClInclude Include="BinaryFile.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="IVGXT.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="uint32_hex.h">
+    <ClInclude Include="IVText.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="IVGXT.cpp">
+    <ClCompile Include="IVText.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="uint32_hex.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
