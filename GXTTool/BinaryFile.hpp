@@ -3,6 +3,17 @@
 #include <filesystem>
 #include <cstdio>
 #include <type_traits>
+#include <memory>
+
+struct FilePtrDeleter
+{
+	typedef std::FILE *pointer;
+
+	void operator()(std::FILE *file) const
+	{
+		std::fclose(file);
+	}
+};
 
 class BinaryFile
 {
@@ -22,35 +33,10 @@ public:
 	};
 
 	BinaryFile() = default;
-	BinaryFile(BinaryFile &) = delete;
-	BinaryFile &operator=(BinaryFile &) = delete;
 
 	BinaryFile(const std::experimental::filesystem::v1::path &filename, OpenMode method)
 	{
 		Open(filename, method);
-	}
-
-	BinaryFile(BinaryFile &&rvalue)
-	{
-		m_File = rvalue.m_File;
-
-		rvalue.m_File = nullptr;
-	}
-
-	BinaryFile &operator=(BinaryFile &&rvalue)
-	{
-		Close();
-
-		m_File = rvalue.m_File;
-
-		rvalue.m_File = nullptr;
-
-		return *this;
-	}
-
-	~BinaryFile()
-	{
-		Close();
 	}
 
 	void Open(const std::experimental::filesystem::v1::path &filename, OpenMode method)
@@ -77,22 +63,17 @@ public:
 			return;
 		}
 
-		m_File = std::fopen(filename.string().c_str(), method_str);
+		m_pFile.reset(std::fopen(filename.string().c_str(), method_str));
 	}
 
 	void Close()
 	{
-		if (m_File)
-		{
-			std::fclose(m_File);
-		}
-
-		m_File = nullptr;
+		m_pFile.reset();
 	}
 
 	bool Opened() const
 	{
-		return (m_File == nullptr);
+		return (bool)m_pFile;
 	}
 
 	operator bool() const
@@ -122,20 +103,19 @@ public:
 			return *this;
 		}
 
-		_fseeki64(m_File, offset, temp);
+		_fseeki64(m_pFile.get(), offset, temp);
 
 		return *this;
 	}
 
 	std::int64_t Tell() const
 	{
-		return _ftelli64(m_File);
+		return _ftelli64(m_pFile.get());
 	}
 
-	BinaryFile &Read(void *buffer, std::uint64_t size)
+	BinaryFile &Read(void *buffer, std::size_t size)
 	{
-		std::fread(buffer, size, 1, m_File);
-
+		std::fread(buffer, size, 1, m_pFile.get());
 		return *this;
 	}
 
@@ -143,12 +123,12 @@ public:
 	std::enable_if_t<std::is_trivial_v<T>, BinaryFile &> Read(T &object)
 	{
 		Read(&object, sizeof(object));
+		return *this;
 	}
 
-	BinaryFile &Write(const void *buffer, std::uint64_t size)
+	BinaryFile &Write(const void *buffer, std::size_t size)
 	{
-		std::fwrite(buffer, size, 1, m_File);
-
+		std::fwrite(buffer, size, 1, m_pFile.get());
 		return *this;
 	}
 
@@ -156,7 +136,6 @@ public:
 	std::enable_if_t<std::is_trivial_v<T>, BinaryFile &> Write(const T &object)
 	{
 		Write(&object, sizeof(object));
-
 		return *this;
 	}
 
@@ -172,6 +151,5 @@ public:
 	}
 
 private:
-	FILE * m_File = nullptr;
+	std::unique_ptr<std::FILE, FilePtrDeleter> m_pFile;
 };
-

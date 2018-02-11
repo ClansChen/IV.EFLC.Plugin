@@ -63,7 +63,6 @@ IVText::tWideString IVText::ConvertToWideString(const std::string &in)
 {
 	tWideString result;
 	utf8::utf8to16(in.begin(), in.end(), back_inserter(result));
-	replace(result.begin(), result.end(), 0x2122, 0x99);
 	return result;
 }
 
@@ -199,7 +198,29 @@ void IVText::LoadTexts(const std::experimental::filesystem::v1::path &input_text
 
 void IVText::GenerateBinary(const std::experimental::filesystem::v1::path & output_binary) const
 {
+	BinaryFile file(output_binary, BinaryFile::OpenMode::WriteOnly);
 
+	TABLBlockHeader TablHeader;
+
+	if (!file)
+	{
+		cout << "创建输出文件 " << output_binary.string() << " 失败。" << endl;
+		return;
+	}
+
+	file.Write(0x100004i32);
+
+	TablHeader.Name[0] = 'T';
+	TablHeader.Name[1] = 'A';
+	TablHeader.Name[2] = 'B';
+	TablHeader.Name[3] = 'L';
+	TablHeader.Size = m_Data.size() * sizeof(TABLEntry);
+	file.Write(TablHeader);
+
+	for (auto &table : m_Data)
+	{
+
+	}
 }
 
 void IVText::GenerateCollection(const std::experimental::filesystem::v1::path & output_text) const
@@ -323,15 +344,65 @@ void IVText::GameToLiteral(tWideString & wtext)
 
 void IVText::LoadBinary(const std::experimental::filesystem::v1::path & input_binary)
 {
+	GXTHeader GxtHeader;
+	TABLBlockHeader TablHeader;
+	TKEYBlockHeader TkeyHeader;
+	TDATBlockHeader TdatHeader;
+
+	vector<TABLEntry> TablBlock;
+	vector<TKEYEntry> TkeyBlock;
+	vector<char> TdatBlock;
+
+	m_Data.clear();
+	m_Collection.clear();
+
+	std::map<std::string, std::vector<tEntry>, IVTextTableSorting>::iterator current_table = m_Data.end();
+
 	BinaryFile file(input_binary, BinaryFile::OpenMode::ReadOnly);
 
 	if (!file)
 	{
-		cout << "打开输入文件 " << input_binary.string() << " 失败" << endl;
+		cout << "打开输入文件 " << input_binary.string() << " 失败。" << endl;
 		return;
 	}
 
+	file.Read(GxtHeader);
 
+	file.Read(TablHeader);
+
+	TablBlock.resize(TablHeader.Size / sizeof(TABLEntry));
+	file.Read(TablBlock.data(), TablHeader.Size);
+
+	for (TABLEntry &table : TablBlock)
+	{
+		current_table = m_Data.insert(tTable(table.Name, vector<tEntry>())).first;
+
+		file.Seek(table.Offset, BinaryFile::SeekMode::Begin);
+
+		if (strcmp(table.Name, "MAIN") != 0)
+		{
+			file.Seek(8, BinaryFile::SeekMode::Current);
+		}
+
+		file.Read(TkeyHeader);
+
+		TkeyBlock.resize(TkeyHeader.Size / sizeof(TKEYEntry));
+		file.Read(TkeyBlock.data(), TkeyHeader.Size);
+
+		file.Read(TdatHeader);
+		TdatBlock.resize(TdatHeader.Size);
+		file.Read(TdatBlock.data(), TdatHeader.Size);
+
+		for (auto &key : TkeyBlock)
+		{
+			tWideString wtext = (uint16_t *)(&TdatBlock[key.Offset]);
+
+			FixCharacters(wtext);
+			GameToLiteral(wtext);
+
+			current_table->second.push_back(make_pair(key.Hash, ConvertToNarrow(wtext)));
+		}
+	}
 }
 
 void IVText::GenerateTexts(const std::experimental::filesystem::v1::path & output_texts) const

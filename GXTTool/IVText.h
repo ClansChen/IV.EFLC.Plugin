@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <filesystem>
+#include <cstring>
 #include <string>
 #include <set>
 #include <vector>
@@ -36,36 +37,46 @@ struct IVTextTableSorting
 	}
 };
 
+struct GXTHeader
+{
+	std::int32_t Signature;
+};
+
 struct TABLBlockHeader
 {
-
+	char Name[4];
+	std::int32_t Size;
 };
 
 struct TABLEntry
 {
-
+	char Name[8];
+	std::int32_t Offset;
 };
 
 struct TKEYBlockHeader
 {
-
+	char Name[4];
+	std::int32_t Size;
 };
 
 struct TKEYEntry
 {
-
+	std::int32_t Offset;
+	std::uint32_t Hash;
 };
 
-struct TDATHeader
+struct TDATBlockHeader
 {
-
+	char TDAT[4];
+	std::int32_t Size;
 };
 
 class IVText
 {
 public:
-	static const size_t MaxColumns = 64;
-	static const size_t MaxRows = 51;
+	static const uint8_t MaxColumns = 64;
+	static const uint8_t MaxRows = 51;
 
 	typedef std::uint32_t tHash;
 	typedef std::basic_string<std::uint16_t> tWideString;
