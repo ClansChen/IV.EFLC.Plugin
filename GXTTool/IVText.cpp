@@ -3,7 +3,7 @@
 #include "BinaryFile.hpp"
 
 using namespace std;
-using namespace std::experimental::filesystem::v1;
+using namespace experimental::filesystem::v1;
 
 void IVText::Process0Arg()
 {
@@ -15,14 +15,22 @@ void IVText::Process0Arg()
 	path text_path = temp;
 	text_path = text_path.parent_path();
 
+	m_Data.clear();
+	m_Collection.clear();
+
+	text_path = "D:/";
+
 	LoadText(text_path / "GTA4.txt");
 	GenerateBinary(text_path / "chinese.gxt");
 	GenerateCollection(text_path / "characters.txt");
 	GenerateTable(text_path / "table.dat");
 }
 
-void IVText::Process2Args(const std::experimental::filesystem::v1::path &arg1, const std::experimental::filesystem::v1::path &arg2)
+void IVText::Process2Args(const path &arg1, const path &arg2)
 {
+	m_Data.clear();
+	m_Collection.clear();
+
 	if (is_directory(arg1))
 	{
 		create_directories(arg2);
@@ -39,7 +47,7 @@ void IVText::Process2Args(const std::experimental::filesystem::v1::path &arg1, c
 	}
 }
 
-void IVText::SkipUTF8Signature(std::ifstream &stream)
+void IVText::SkipUTF8Signature(ifstream &stream)
 {
 	char bom[3];
 
@@ -54,21 +62,21 @@ void IVText::SkipUTF8Signature(std::ifstream &stream)
 	stream.seekg(0);
 }
 
-void IVText::AddUTF8Signature(std::ofstream &stream)
+void IVText::AddUTF8Signature(ofstream &stream)
 {
 	stream << "\xEF\xBB\xBF";
 }
 
-IVText::tWideString IVText::ConvertToWide(const std::string &in)
+IVText::tWideString IVText::ConvertToWide(const string &in)
 {
 	tWideString result;
 	utf8::utf8to16(in.begin(), in.end(), back_inserter(result));
 	return result;
 }
 
-std::string IVText::ConvertToNarrow(const tWideString &in)
+string IVText::ConvertToNarrow(const tWideString &in)
 {
-	std::string result;
+	string result;
 	utf8::utf16to8(in.begin(), in.end(), back_inserter(result));
 	return result;
 }
@@ -99,9 +107,9 @@ bool IVText::IsNativeCharacter(uint16_t character)
 		character == 0x2122);
 }
 
-void IVText::CollectCharacters(const std::string & text)
+void IVText::CollectCharacters(const string & text)
 {
-	utf8::iterator<std::string::const_iterator> u8it(text.begin(), text.begin(), text.end());
+	utf8::iterator<string::const_iterator> u8it(text.begin(), text.begin(), text.end());
 
 	while (u8it.base() != text.end())
 	{
@@ -116,7 +124,7 @@ void IVText::CollectCharacters(const std::string & text)
 	}
 }
 
-void IVText::LoadText(const std::experimental::filesystem::v1::path &input_text)
+void IVText::LoadText(const path &input_text)
 {
 	regex table_regex(R"(\[([0-9a-zA-Z_]{1,7})\])");
 	regex entry_regex(R"((0[xX][0-9a-fA-F]{8})=(.+))");
@@ -129,7 +137,7 @@ void IVText::LoadText(const std::experimental::filesystem::v1::path &input_text)
 
 	size_t line_no = 0;
 
-	std::ifstream stream(input_text);
+	ifstream stream(input_text);
 
 	if (!stream)
 	{
@@ -179,12 +187,9 @@ void IVText::LoadText(const std::experimental::filesystem::v1::path &input_text)
 	}
 }
 
-void IVText::LoadTexts(const std::experimental::filesystem::v1::path &input_texts)
+void IVText::LoadTexts(const path &input_texts)
 {
 	directory_iterator dir_it{ input_texts };
-
-	m_Data.clear();
-	m_Collection.clear();
 
 	while (dir_it != directory_iterator{})
 	{
@@ -196,7 +201,7 @@ void IVText::LoadTexts(const std::experimental::filesystem::v1::path &input_text
 	}
 }
 
-void IVText::GenerateBinary(const std::experimental::filesystem::v1::path & output_binary) const
+void IVText::GenerateBinary(const path & output_binary) const
 {
 	BinaryFile file(output_binary, BinaryFile::OpenMode::WriteOnly);
 
@@ -287,18 +292,18 @@ void IVText::GenerateBinary(const std::experimental::filesystem::v1::path & outp
 			file.Write(tkeyHeader);
 		}
 
-		file.WriteContainer(tkeyBlock);
+		file.WriteArray(tkeyBlock);
 		file.Write(tdatHeader);
-		file.WriteContainer(tdatBlock);
+		file.WriteArray(tdatBlock);
 
 		writePostion = file.Tell();
 	}
 
 	file.Seek(4 + sizeof(TABLHeader), BinaryFile::SeekMode::Begin);
-	file.WriteContainer(tablBlock);
+	file.WriteArray(tablBlock);
 }
 
-void IVText::GenerateCollection(const std::experimental::filesystem::v1::path & output_text) const
+void IVText::GenerateCollection(const path & output_text) const
 {
 	vector<char> sequence;
 
@@ -323,7 +328,7 @@ void IVText::GenerateCollection(const std::experimental::filesystem::v1::path & 
 	copy(sequence.begin(), sequence.end(), ostreambuf_iterator<char>(stream));
 }
 
-void IVText::GenerateTable(const std::experimental::filesystem::v1::path & output_binary) const
+void IVText::GenerateTable(const path & output_binary) const
 {
 	vector<pair<uint8_t, uint8_t>> data;
 
@@ -417,7 +422,7 @@ void IVText::GameToLiteral(tWideString & wtext)
 	}
 }
 
-void IVText::LoadBinary(const std::experimental::filesystem::v1::path & input_binary)
+void IVText::LoadBinary(const path & input_binary)
 {
 	GXTHeader gxtHeader;
 	TABLHeader tablHeader;
@@ -431,7 +436,7 @@ void IVText::LoadBinary(const std::experimental::filesystem::v1::path & input_bi
 	m_Data.clear();
 	m_Collection.clear();
 
-	std::map<std::string, std::vector<tEntry>, IVTextTableSorting>::iterator tableIter = m_Data.end();
+	map<string, vector<tEntry>, IVTextTableSorting>::iterator tableIter = m_Data.end();
 
 	BinaryFile file(input_binary, BinaryFile::OpenMode::ReadOnly);
 
@@ -445,8 +450,7 @@ void IVText::LoadBinary(const std::experimental::filesystem::v1::path & input_bi
 
 	file.Read(tablHeader);
 
-	tablBlock.resize(tablHeader.Size / sizeof(TABLEntry));
-	file.Read(tablBlock.data(), tablHeader.Size);
+	file.ReadArray(tablHeader.Size / sizeof(TABLEntry), tablBlock);
 
 	for (TABLEntry &table : tablBlock)
 	{
@@ -463,12 +467,11 @@ void IVText::LoadBinary(const std::experimental::filesystem::v1::path & input_bi
 			file.Read(tkeyHeader.Header);
 		}
 
-		tkeyBlock.resize(tkeyHeader.Header.Size / sizeof(TKEYEntry));
-		file.Read(tkeyBlock.data(), tkeyHeader.Header.Size);
+		file.ReadArray(tkeyHeader.Header.Size / sizeof(TKEYEntry), tkeyBlock);
 
 		file.Read(tdatHeader);
-		tdatBlock.resize(tdatHeader.Size);
-		file.Read(tdatBlock.data(), tdatHeader.Size);
+
+		file.ReadArray(tdatHeader.Size / 2, tdatBlock);
 
 		for (auto &key : tkeyBlock)
 		{
@@ -482,7 +485,7 @@ void IVText::LoadBinary(const std::experimental::filesystem::v1::path & input_bi
 	}
 }
 
-void IVText::GenerateTexts(const std::experimental::filesystem::v1::path & output_texts) const
+void IVText::GenerateTexts(const path & output_texts) const
 {
 	ofstream stream;
 

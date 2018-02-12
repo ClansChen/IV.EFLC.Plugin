@@ -4,11 +4,10 @@
 #include <cstdio>
 #include <type_traits>
 #include <memory>
+#include <vector>
 
 struct FilePtrDeleter
 {
-	typedef std::FILE *pointer;
-
 	void operator()(std::FILE *file) const
 	{
 		std::fclose(file);
@@ -126,6 +125,14 @@ public:
 		return *this;
 	}
 
+	template <typename T>
+	std::enable_if_t<std::is_trivial_v<T>, BinaryFile &> ReadArray(std::size_t count, std::vector<T> &objects)
+	{
+		objects.resize(count);
+		Read(objects.data(), sizeof(T) * count);
+		return *this;
+	}
+
 	BinaryFile &Write(const void *buffer, std::size_t size)
 	{
 		std::fwrite(buffer, size, 1, m_pFile.get());
@@ -140,13 +147,10 @@ public:
 	}
 
 	template <typename T>
-	std::enable_if_t<std::is_trivial_v<typename T::value_type>, BinaryFile &> WriteContainer(const T &objects)
+	std::enable_if_t<std::is_trivial_v<T>, BinaryFile &> WriteArray(const std::vector<T> &objects)
 	{
-		for (auto &object : objects)
-		{
-			Write(&object, sizeof(object));
-		}
-
+		
+		Write(objects.data(), sizeof(T) * objects.size());
 		return *this;
 	}
 
