@@ -42,9 +42,9 @@ struct GXTHeader
 	std::int32_t Signature;
 };
 
-struct TABLBlockHeader
+struct TABLHeader
 {
-	char Name[4];
+	char TABL[4];
 	std::int32_t Size;
 };
 
@@ -54,10 +54,16 @@ struct TABLEntry
 	std::int32_t Offset;
 };
 
-struct TKEYBlockHeader
+struct TKEYHeaderMAIN
 {
-	char Name[4];
+	char TKEY[4];
 	std::int32_t Size;
+};
+
+struct TKEYHeader
+{
+	char Name[8];
+	TKEYHeaderMAIN Header;
 };
 
 struct TKEYEntry
@@ -66,7 +72,7 @@ struct TKEYEntry
 	std::uint32_t Hash;
 };
 
-struct TDATBlockHeader
+struct TDATHeader
 {
 	char TDAT[4];
 	std::int32_t Size;
@@ -94,7 +100,7 @@ private:
 	static void SkipUTF8Signature(std::ifstream &stream);
 	static void AddUTF8Signature(std::ofstream &stream);
 
-	static tWideString ConvertToWideString(const std::string &in);
+	static tWideString ConvertToWide(const std::string &in);
 	static std::string ConvertToNarrow(const tWideString &in);
 
 	static bool IsNativeCharacter(uint16_t character);

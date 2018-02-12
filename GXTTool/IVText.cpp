@@ -59,7 +59,7 @@ void IVText::AddUTF8Signature(std::ofstream &stream)
 	stream << "\xEF\xBB\xBF";
 }
 
-IVText::tWideString IVText::ConvertToWideString(const std::string &in)
+IVText::tWideString IVText::ConvertToWide(const std::string &in)
 {
 	tWideString result;
 	utf8::utf8to16(in.begin(), in.end(), back_inserter(result));
@@ -200,7 +200,22 @@ void IVText::GenerateBinary(const std::experimental::filesystem::v1::path & outp
 {
 	BinaryFile file(output_binary, BinaryFile::OpenMode::WriteOnly);
 
-	TABLBlockHeader TablHeader;
+	long long writePostion;
+
+	GXTHeader gxtHeader;
+
+	TABLHeader tablHeader;
+	TKEYHeader tkeyHeader;
+	TDATHeader tdatHeader;
+
+	TABLEntry tablEntry;
+	TKEYEntry tkeyEntry;
+
+	vector<TABLEntry> tablBlock;
+	vector<TKEYEntry> tkeyBlock;
+	vector<uint16_t> tdatBlock;
+
+	tWideString wideText;
 
 	if (!file)
 	{
@@ -208,19 +223,79 @@ void IVText::GenerateBinary(const std::experimental::filesystem::v1::path & outp
 		return;
 	}
 
-	file.Write(0x100004i32);
+	gxtHeader.Signature = 0x100004;
+	file.Write(gxtHeader);
 
-	TablHeader.Name[0] = 'T';
-	TablHeader.Name[1] = 'A';
-	TablHeader.Name[2] = 'B';
-	TablHeader.Name[3] = 'L';
-	TablHeader.Size = m_Data.size() * sizeof(TABLEntry);
-	file.Write(TablHeader);
+	tablHeader.TABL[0] = 'T';
+	tablHeader.TABL[1] = 'A';
+	tablHeader.TABL[2] = 'B';
+	tablHeader.TABL[3] = 'L';
+
+	tkeyHeader.Header.TKEY[0] = 'T';
+	tkeyHeader.Header.TKEY[1] = 'K';
+	tkeyHeader.Header.TKEY[2] = 'E';
+	tkeyHeader.Header.TKEY[3] = 'Y';
+
+	tdatHeader.TDAT[0] = 'T';
+	tdatHeader.TDAT[1] = 'D';
+	tdatHeader.TDAT[2] = 'A';
+	tdatHeader.TDAT[3] = 'T';
+
+	tablHeader.Size = m_Data.size() * sizeof(TABLEntry);
+	file.Write(tablHeader);
+
+	writePostion = 4 + sizeof(TABLHeader) + tablHeader.Size;
+
+	tablBlock.clear();
 
 	for (auto &table : m_Data)
 	{
+		tkeyBlock.clear();
+		tdatBlock.clear();
 
+		strcpy(tablEntry.Name, table.first.c_str());
+		tablEntry.Offset = writePostion;
+		tablBlock.push_back(tablEntry);
+
+		strcpy(tkeyHeader.Name, table.first.c_str());
+		tkeyHeader.Header.Size = table.second.size() * sizeof(TKEYEntry);
+
+		for (auto &key : table.second)
+		{
+			tkeyEntry.Hash = key.first;
+			tkeyEntry.Offset = tdatBlock.size() * 2;
+
+			wideText = ConvertToWide(key.second);
+			LiteralToGame(wideText);
+
+			copy(wideText.begin(), wideText.end(), back_inserter(tdatBlock));
+			tdatBlock.push_back(0);
+
+			tkeyBlock.push_back(tkeyEntry);
+		}
+
+		tdatHeader.Size = tdatBlock.size() * 2;
+
+		file.Seek(writePostion, BinaryFile::SeekMode::Begin);
+
+		if (table.first == "MAIN")
+		{
+			file.Write(tkeyHeader.Header);
+		}
+		else
+		{
+			file.Write(tkeyHeader);
+		}
+
+		file.WriteContainer(tkeyBlock);
+		file.Write(tdatHeader);
+		file.WriteContainer(tdatBlock);
+
+		writePostion = file.Tell();
 	}
+
+	file.Seek(4 + sizeof(TABLHeader), BinaryFile::SeekMode::Begin);
+	file.WriteContainer(tablBlock);
 }
 
 void IVText::GenerateCollection(const std::experimental::filesystem::v1::path & output_text) const
@@ -264,7 +339,7 @@ void IVText::GenerateTable(const std::experimental::filesystem::v1::path & outpu
 			colunm = 0;
 		}
 
-		data[character] = { row,colunm };
+		data[character] = { row, colunm };
 
 		++colunm;
 	}
@@ -344,19 +419,19 @@ void IVText::GameToLiteral(tWideString & wtext)
 
 void IVText::LoadBinary(const std::experimental::filesystem::v1::path & input_binary)
 {
-	GXTHeader GxtHeader;
-	TABLBlockHeader TablHeader;
-	TKEYBlockHeader TkeyHeader;
-	TDATBlockHeader TdatHeader;
+	GXTHeader gxtHeader;
+	TABLHeader tablHeader;
+	TKEYHeader tkeyHeader;
+	TDATHeader tdatHeader;
 
-	vector<TABLEntry> TablBlock;
-	vector<TKEYEntry> TkeyBlock;
-	vector<char> TdatBlock;
+	vector<TABLEntry> tablBlock;
+	vector<TKEYEntry> tkeyBlock;
+	vector<char> tdatBlock;
 
 	m_Data.clear();
 	m_Collection.clear();
 
-	std::map<std::string, std::vector<tEntry>, IVTextTableSorting>::iterator current_table = m_Data.end();
+	std::map<std::string, std::vector<tEntry>, IVTextTableSorting>::iterator tableIter = m_Data.end();
 
 	BinaryFile file(input_binary, BinaryFile::OpenMode::ReadOnly);
 
@@ -366,41 +441,43 @@ void IVText::LoadBinary(const std::experimental::filesystem::v1::path & input_bi
 		return;
 	}
 
-	file.Read(GxtHeader);
+	file.Read(gxtHeader);
 
-	file.Read(TablHeader);
+	file.Read(tablHeader);
 
-	TablBlock.resize(TablHeader.Size / sizeof(TABLEntry));
-	file.Read(TablBlock.data(), TablHeader.Size);
+	tablBlock.resize(tablHeader.Size / sizeof(TABLEntry));
+	file.Read(tablBlock.data(), tablHeader.Size);
 
-	for (TABLEntry &table : TablBlock)
+	for (TABLEntry &table : tablBlock)
 	{
-		current_table = m_Data.insert(tTable(table.Name, vector<tEntry>())).first;
+		tableIter = m_Data.insert(tTable(table.Name, vector<tEntry>())).first;
 
 		file.Seek(table.Offset, BinaryFile::SeekMode::Begin);
 
 		if (strcmp(table.Name, "MAIN") != 0)
 		{
-			file.Seek(8, BinaryFile::SeekMode::Current);
+			file.Read(tkeyHeader);
+		}
+		else
+		{
+			file.Read(tkeyHeader.Header);
 		}
 
-		file.Read(TkeyHeader);
+		tkeyBlock.resize(tkeyHeader.Header.Size / sizeof(TKEYEntry));
+		file.Read(tkeyBlock.data(), tkeyHeader.Header.Size);
 
-		TkeyBlock.resize(TkeyHeader.Size / sizeof(TKEYEntry));
-		file.Read(TkeyBlock.data(), TkeyHeader.Size);
+		file.Read(tdatHeader);
+		tdatBlock.resize(tdatHeader.Size);
+		file.Read(tdatBlock.data(), tdatHeader.Size);
 
-		file.Read(TdatHeader);
-		TdatBlock.resize(TdatHeader.Size);
-		file.Read(TdatBlock.data(), TdatHeader.Size);
-
-		for (auto &key : TkeyBlock)
+		for (auto &key : tkeyBlock)
 		{
-			tWideString wtext = (uint16_t *)(&TdatBlock[key.Offset]);
+			tWideString wtext = (uint16_t *)(&tdatBlock[key.Offset]);
 
 			FixCharacters(wtext);
 			GameToLiteral(wtext);
 
-			current_table->second.push_back(make_pair(key.Hash, ConvertToNarrow(wtext)));
+			tableIter->second.push_back(make_pair(key.Hash, ConvertToNarrow(wtext)));
 		}
 	}
 }

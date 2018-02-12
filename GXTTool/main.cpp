@@ -11,6 +11,7 @@ int main(int argc, char **argv)
 	}
 	else if (argc == 3)
 	{
+
 		instance.Process2Args(argv[1], argv[2]);
 	}
 	else
