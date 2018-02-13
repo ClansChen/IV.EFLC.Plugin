@@ -4,7 +4,7 @@
 #include "dictionary.h"
 #include "hash.h"
 #include "table.h"
-#include "deps/injector/calling.hpp"
+#include "injector/calling.hpp"
 #include <cstring>
 
 namespace Font

@@ -40,8 +40,6 @@ public:
 
 	void Open(const std::experimental::filesystem::v1::path &filename, OpenMode method)
 	{
-		Close();
-
 		const char *method_str;
 
 		switch (method)
@@ -149,7 +147,6 @@ public:
 	template <typename T>
 	std::enable_if_t<std::is_trivial_v<T>, BinaryFile &> WriteArray(const std::vector<T> &objects)
 	{
-		
 		Write(objects.data(), sizeof(T) * objects.size());
 		return *this;
 	}

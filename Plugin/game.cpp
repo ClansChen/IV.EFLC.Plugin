@@ -1,6 +1,6 @@
 #include "game.h"
 #include "plugin.h"
-#include "deps/injector/calling.hpp"
+#include "injector/calling.hpp"
 
 namespace Game
 {

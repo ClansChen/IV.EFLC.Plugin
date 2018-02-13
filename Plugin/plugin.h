@@ -1,6 +1,6 @@
 #pragma once
 #include <windows.h>
-#include "deps/injector/injector.hpp"
+#include "injector/injector.hpp"
 
 namespace Plugin
 {

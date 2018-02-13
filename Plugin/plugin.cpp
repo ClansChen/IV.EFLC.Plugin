@@ -7,7 +7,7 @@
 #include "dictionary.h"
 #include "hash.h"
 #include "table.h"
-#include "deps/injector/hooking.hpp"
+#include "injector/hooking.hpp"
 
 static char TablePath[MAX_PATH];
 
@@ -61,7 +61,6 @@ namespace Plugin
 
 	void Patch()
 	{
-#if 1
 		injector::MakeCALL(AddressByVersion(0x88A690 + 0x100), Font::GetStringWidthHook);
 
 		injector::MakeJMP(AddressByVersion(0x8859E0), Font::SkipAWord);
@@ -80,7 +79,6 @@ namespace Plugin
 		injector::MakeCALL(AddressByVersion(0x887CB6), Font::LoadTextureCB);
 
 		injector::MakeJMP(Plugin::AddressByVersion(0x8A3880), GetTextFileName);
-#endif
 	}
 
 	void Init(HMODULE module)

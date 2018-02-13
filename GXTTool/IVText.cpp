@@ -18,8 +18,6 @@ void IVText::Process0Arg()
 	m_Data.clear();
 	m_Collection.clear();
 
-	text_path = "D:/";
-
 	LoadText(text_path / "GTA4.txt");
 	GenerateBinary(text_path / "chinese.gxt");
 	GenerateCollection(text_path / "characters.txt");
@@ -330,11 +328,15 @@ void IVText::GenerateCollection(const path & output_text) const
 
 void IVText::GenerateTable(const path & output_binary) const
 {
-	vector<pair<uint8_t, uint8_t>> data;
+	uint8_t data[0x20000];
+
+	for (size_t index = 0; index < 0x10000; ++index)
+	{
+		data[index * 2] = MaxRows - 1;
+		data[index * 2 + 1] = MaxColumns - 1;
+	}
 
 	uint8_t row = 0, colunm = 0;
-
-	data.resize(0x10000, { MaxRows - 1, MaxColumns - 1 });
 
 	for (auto character : m_Collection)
 	{
@@ -344,14 +346,15 @@ void IVText::GenerateTable(const path & output_binary) const
 			colunm = 0;
 		}
 
-		data[character] = { row, colunm };
+		data[character * 2] = row;
+		data[character * 2 + 1] = colunm;
 
 		++colunm;
 	}
 
 	BinaryFile stream(output_binary, BinaryFile::OpenMode::WriteOnly);
 
-	stream.Write(data.data(), 0x20000);
+	stream.Write(data, 0x20000);
 }
 
 void IVText::FixCharacters(tWideString &wtext)
@@ -471,7 +474,7 @@ void IVText::LoadBinary(const path & input_binary)
 
 		file.Read(tdatHeader);
 
-		file.ReadArray(tdatHeader.Size / 2, tdatBlock);
+		file.ReadArray(tdatHeader.Size, tdatBlock);
 
 		for (auto &key : tkeyBlock)
 		{

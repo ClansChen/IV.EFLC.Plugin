@@ -1,6 +1,6 @@
 #include "plugin.h"
 #include "game.h"
-#include "deps/injector/calling.hpp"
+#include "injector/calling.hpp"
 
 namespace Hash
 {
