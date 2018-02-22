@@ -1,7 +1,8 @@
 ﻿#pragma once
+#include "stdinc.h"
 
 namespace Game
 {
 	void SetRenderState(void *, int = 1);
-	unsigned char GetRenderIndex();
+	std::uint8_t GetRenderIndex();
 }

@@ -1,11 +1,8 @@
 #pragma once
-#include <windows.h>
-#include "injector/injector.hpp"
+#include "stdinc.h"
 
 namespace Plugin
 {
-	void Init(HMODULE);
-
 	enum class eGameVersion
 	{
 		UNCHECKED,
@@ -14,7 +11,9 @@ namespace Plugin
 		UNKNOWN
 	};
 
+	void Init(HMODULE);
+
 	eGameVersion GetGameVersion();
 
-	injector::auto_pointer AddressByVersion(unsigned int addressiv, unsigned int addresseflc = 0);
+	injector::auto_pointer AddressByVersion(std::uintptr_t addressiv, std::uintptr_t addresseflc = 0);
 };

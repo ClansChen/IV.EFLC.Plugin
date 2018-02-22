@@ -1,6 +1,7 @@
 #pragma once
+#include "stdinc.h"
 
 namespace Hash
 {
-	unsigned int HashStringFromSeediCase(const char *, unsigned int = 0);
+	std::uint32_t HashStringFromSeediCase(const char *, std::uint32_t = 0);
 }

@@ -1,15 +1,19 @@
-﻿#include "plugin.h"
-#include "font.h"
+﻿#include "font.h"
 #include "game.h"
+#include "plugin.h"
+#include "table.h"
 #include "dictionary.h"
 #include "hash.h"
-#include "table.h"
-#include "injector/calling.hpp"
-#include <cstring>
 
 namespace Font
 {
 	static const float fChsWidth = 32.0f;
+	static const float fTextureResolution = 4096.0f;
+	static const float fTextureRowsCount = 51.2f;
+	static const float fTextureColumnsCount = 64.0f;
+	static const float fSpriteWidth = 64.0f;
+	static const float fSpriteHeight = 80.0f;
+	static const float fRatio = fTextureColumnsCount / 16.0f;
 
 	static CFontDetails *pDetails = Plugin::AddressByVersion(0x11F5BC8);
 	static CFontRenderState *pRenderState = Plugin::AddressByVersion(0xF38114);
@@ -18,7 +22,7 @@ namespace Font
 
 	static void *pChsTexture;
 
-	bool IsNaiveCharacter(wchar_t character)
+	bool IsNaiveCharacter(std::uint16_t character)
 	{
 		return (
 			character < 0x80 ||
@@ -41,11 +45,12 @@ namespace Font
 			character == 0xF3 ||
 			character == 0xF5 ||
 			character == 0xFA ||
+			character == 0xFB ||
 			character == 0xFC ||
 			character == 0x99);
 	}
 
-	void *__fastcall LoadTextureCB(void *pDictionary, int, unsigned int hash)
+	void *__fastcall LoadTextureCB(void *pDictionary, int, std::uint32_t hash)
 	{
 		void *result = Dictionary::GetElementByKey(pDictionary, hash);
 
@@ -54,19 +59,19 @@ namespace Font
 		return result;
 	}
 
-	wchar_t *SkipAWord(wchar_t *text)
+	std::uint16_t *SkipAWord(std::uint16_t *text)
 	{
 		if (!text)
 		{
 			return text;
 		}
 
-		wchar_t *begin = text;
-		wchar_t *current = text;
+		std::uint16_t *begin = text;
+		std::uint16_t *current = text;
 
 		while (true)
 		{
-			wchar_t character = *current;
+			std::uint16_t character = *current;
 
 			if (character == ' ' || character == '~' || character == 0)
 			{
@@ -94,16 +99,16 @@ namespace Font
 
 	float GetCHSCharacterSizeNormal()
 	{
-		unsigned char index = Game::GetRenderIndex();
+		std::uint8_t index = Game::GetRenderIndex();
 
 		return ((fChsWidth / *pFontResX + pDetails[index].fEdgeSize2) * pDetails[index].fScaleX);
 	}
 
-	float GetCharacterSizeNormalDispatch(wchar_t character)
+	float GetCharacterSizeNormalDispatch(std::uint16_t character)
 	{
 		if (IsNaiveCharacter(character + 0x20))
 		{
-			return injector::cstd<float(wchar_t)>::call(Plugin::AddressByVersion(0x884110), character);
+			return injector::cstd<float(std::uint16_t)>::call(Plugin::AddressByVersion(0x884110), character);
 		}
 		else
 		{
@@ -123,11 +128,11 @@ namespace Font
 		return (((fChsWidth + extrawidth) / *pFontResX + pRenderState->fEdgeSize) * pRenderState->fScaleX);
 	}
 
-	float GetCharacterSizeDrawingDispatch(wchar_t character, bool useextrawidth)
+	float GetCharacterSizeDrawingDispatch(std::uint16_t character, bool useextrawidth)
 	{
 		if (IsNaiveCharacter(character + 0x20))
 		{
-			return injector::cstd<float(wchar_t, bool)>::call(Plugin::AddressByVersion(0x874040), character, useextrawidth);
+			return injector::cstd<float(std::uint16_t, bool)>::call(Plugin::AddressByVersion(0x874040), character, useextrawidth);
 		}
 		else
 		{
@@ -135,16 +140,8 @@ namespace Font
 		}
 	}
 
-	void PrintCHSChar(float posx, float posy, wchar_t character)
+	void PrintCHSChar(float posx, float posy, std::uint16_t character)
 	{
-#pragma message ("Rewrite Print Function")
-		static const float fTextureResolution = 4096.0f;
-		static const float fTextureRowsCount = 51.2f;
-		static const float fTextureColumnsCount = 64.0f;
-		static const float fSpriteWidth = 64.0f;
-		static const float fSpriteHeight = 80.0f;
-		static const float fRatio = fTextureColumnsCount / 16.0f;
-
 		rageRect screenrect, texturerect;
 
 		if (posy < -0.06558f || posy > 1.0f)
@@ -156,11 +153,12 @@ namespace Font
 		{
 			return;
 		}
+		
+		std::uint8_t row = Table::GetCharRow(character);
+		std::uint8_t column = Table::GetCharColumn(character);
 
-		CharPos charpos = Table::GetCharPos(character);
-
-		float var_24 = fSpriteWidth / fTextureResolution;
-		float var_28 = (fSpriteWidth / *pFontResX + pRenderState->fEdgeSize) * pRenderState->fScaleX;
+		float var_24 = fSpriteWidth / 4096.0f;
+		float var_28 = (fChsWidth / *pFontResX + pRenderState->fEdgeSize) * pRenderState->fScaleX;
 		float var_2C = pRenderState->fScaleY * 0.06558f;
 
 		screenrect.field_0 = posx;
@@ -168,10 +166,23 @@ namespace Font
 		screenrect.field_8 = posx + var_28;
 		screenrect.field_C = posy;
 
-		texturerect.field_0 = charpos.column / fTextureColumnsCount;
-		texturerect.field_4 = ((charpos.row - 0.045f / fRatio) * fSpriteHeight + 39.5f) / fTextureResolution - 0.001f / fRatio + 0.0048f / fRatio;
-		texturerect.field_8 = charpos.column / fTextureColumnsCount + var_24;
-		texturerect.field_C = ((charpos.row - 0.045f / fRatio) * fSpriteHeight + 4.0f) / fTextureResolution;
+		texturerect.field_C = (row - 0.045) * 40 * 1 / 512 + 4 * 1 / 512;
+		if (texturerect.field_C > 1.0f)
+		{
+			texturerect.field_C = 1.0f;
+		}
+		texturerect.field_4 = (row - 0.045) * 40 * 1 / 512 + 39.5 * 1 / 512 - 0.001 + 0.0048;
+		texturerect.field_0 = column / 16;
+		texturerect.field_8 = column / 16 + var_24;
+
+		texturerect.field_C = (row - 0.045f / 4.0f) * 40.0f * 1.0f / 2048.0f + 4.0f * 1.0f / 2048.0f;
+		if (texturerect.field_C > 1.0f)
+		{
+			texturerect.field_C = 1.0f;
+		}
+		texturerect.field_4 = (row - 0.045f / 4.0f) * 40.0f * 1.0f / 2048.0f + 39.5f * 1.0f / 2048.0f - 0.001f / 4.0f + 0.0048f / 4.0f;
+		texturerect.field_0 = column / 16.0f / 4.0f;
+		texturerect.field_8 = column / 16.0f / 4.0f + var_24;
 
 		switch (pRenderState->nFont)
 		{
@@ -191,14 +202,14 @@ namespace Font
 			break;
 		}
 
-		injector::cstd<void(rageRect *, rageRect *, rageRGBA, int)>::call(Plugin::AddressByVersion(0x884300), &screenrect, &texturerect, pRenderState->field_18, 0);
+		injector::cstd<void(rageRect *, rageRect *, std::uint32_t, int)>::call(Plugin::AddressByVersion(0x884300), &screenrect, &texturerect, pRenderState->field_18, 0);
 	}
 
-	void PrintCharDispatch(float posx, float posy, wchar_t character, int mode)
+	void PrintCharDispatch(float posx, float posy, std::uint16_t character, int mode)
 	{
 		if (pRenderState->TokenType != 0 || IsNaiveCharacter(character + 0x20))
 		{
-			injector::cstd<void(float, float, wchar_t, int)>::call(Plugin::AddressByVersion(0x8843E0), posx, posy, character, mode);
+			injector::cstd<void(float, float, std::uint16_t, int)>::call(Plugin::AddressByVersion(0x8843E0), posx, posy, character, mode);
 		}
 		else
 		{

@@ -1,6 +1,5 @@
 #include "game.h"
 #include "plugin.h"
-#include "injector/calling.hpp"
 
 namespace Game
 {
@@ -9,8 +8,8 @@ namespace Game
 		injector::cstd<void(void*, int)>::call(Plugin::AddressByVersion(0x85CF60), pTexture, arg_4);
 	}
 
-	unsigned char GetRenderIndex()
+	std::uint8_t GetRenderIndex()
 	{
-		return injector::cstd<unsigned char()>::call(Plugin::AddressByVersion(0x8840B0));
+		return injector::cstd<std::uint8_t()>::call(Plugin::AddressByVersion(0x8840B0));
 	}
 }

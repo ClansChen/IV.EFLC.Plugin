@@ -1,11 +1,10 @@
+#include "dictionary.h"
 #include "plugin.h"
-#include "game.h"
-#include "injector/calling.hpp"
 
 namespace Dictionary
 {
-	void *GetElementByKey(void *pDictionary, unsigned int hash)
+	void *GetElementByKey(void *pDictionary, std::uint32_t hash)
 	{
-		return injector::thiscall<void *(void *, unsigned int)>::call(Plugin::AddressByVersion(0x43A490), pDictionary, hash);
+		return injector::thiscall<void *(void *, std::uint32_t)>::call(Plugin::AddressByVersion(0x43A490), pDictionary, hash);
 	}
 }

@@ -1,15 +1,6 @@
-#include <windows.h>
-#include <cstddef>
-#include <cstring>
-
 #include "plugin.h"
 #include "font.h"
-#include "dictionary.h"
-#include "hash.h"
 #include "table.h"
-#include "injector/hooking.hpp"
-
-static char TablePath[MAX_PATH];
 
 static const char * __stdcall GetTextFileName(int)
 {
@@ -24,7 +15,7 @@ namespace Plugin
 
 		if (product == eGameVersion::UNCHECKED)
 		{
-			switch (injector::ReadMemory<unsigned int>(injector::aslr_ptr(0x608C34).get(), true))
+			switch (injector::ReadMemory<std::uint32_t>(injector::aslr_ptr(0x608C34).get(), true))
 			{
 			case 0x404B100F:
 				product = eGameVersion::IV_1_0_8_0;
@@ -43,7 +34,7 @@ namespace Plugin
 		return product;
 	}
 
-	injector::auto_pointer AddressByVersion(unsigned int addressiv, unsigned int addresseflc)
+	injector::auto_pointer AddressByVersion(std::uintptr_t addressiv, std::uintptr_t addresseflc)
 	{
 		switch (GetGameVersion())
 		{
@@ -83,11 +74,9 @@ namespace Plugin
 
 	void Init(HMODULE module)
 	{
-		GetModuleFileNameA(module, TablePath, MAX_PATH);
-
-		std::strcpy(std::strrchr(TablePath, '\\'), "\\table.dat");
-
-		Table::LoadTable(TablePath);
+		wchar_t PluginPath[512];
+		GetModuleFileNameW(module, PluginPath, 512);
+		Table::LoadTable(std::experimental::filesystem::v1::path{ PluginPath }.parent_path() / "wmhhz/table.dat");
 
 		Patch();
 	}

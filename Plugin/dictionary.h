@@ -1,6 +1,7 @@
 #pragma once
+#include "stdinc.h"
 
 namespace Dictionary
 {
-	void *GetElementByKey(void *, unsigned int);
+	void *GetElementByKey(void *, std::uint32_t);
 }
