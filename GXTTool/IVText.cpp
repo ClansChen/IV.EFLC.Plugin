@@ -81,28 +81,7 @@ string IVText::ConvertToNarrow(const tWideString &in)
 
 bool IVText::IsNativeCharacter(uint16_t character)
 {
-	return (character < 0x80 ||
-		character == 0xA9 ||
-		character == 0xAC ||
-		character == 0xAE ||
-		character == 0xC1 ||
-		character == 0xC9 ||
-		character == 0xD6 ||
-		character == 0xDC ||
-		character == 0xE0 ||
-		character == 0xE1 ||
-		character == 0xE7 ||
-		character == 0xE8 ||
-		character == 0xE9 ||
-		character == 0xEA ||
-		character == 0xED ||
-		character == 0xEF ||
-		character == 0xF1 ||
-		character == 0xF3 ||
-		character == 0xF5 ||
-		character == 0xFA ||
-		character == 0xFC ||
-		character == 0x2122);
+	return (character < 0x100 || character == L'™');
 }
 
 void IVText::CollectCharacters(const string & text)
@@ -160,6 +139,12 @@ void IVText::LoadText(const path &input_text)
 				uint32_t hash = stoull(matches.str(1), nullptr, 16);
 				string text = matches.str(2);
 
+				//检查'~'的使用
+				if ((count(text.begin(), text.end(), '~') % 2) != 0)
+				{
+					cout << "第" << line_no << "行的波浪号坏掉了啦！" << endl;
+				}
+
 				CollectCharacters(text);
 
 				table_iter->second.push_back(make_pair(hash, text));
@@ -168,7 +153,6 @@ void IVText::LoadText(const path &input_text)
 			{
 				cout << "第" << line_no << "行没有所属的表。" << endl;
 			}
-
 		}
 		else if (line.front() == '[' && regex_match(line, matches, table_regex))
 		{
@@ -309,7 +293,7 @@ void IVText::GenerateCollection(const path & output_text) const
 
 	for (auto char_it = m_Collection.begin(); char_it != m_Collection.end(); ++char_it)
 	{
-		if (count == MaxColumns)
+		if (count == 63)
 		{
 			sequence.push_back('\n');
 			count = 0;
@@ -332,15 +316,15 @@ void IVText::GenerateTable(const path & output_binary) const
 
 	for (size_t index = 0; index < 0x10000; ++index)
 	{
-		data[index * 2] = MaxRows - 1;
-		data[index * 2 + 1] = MaxColumns - 1;
+		data[index * 2] = 50;
+		data[index * 2 + 1] = 63;
 	}
 
 	uint8_t row = 0, colunm = 0;
 
 	for (auto character : m_Collection)
 	{
-		if (colunm == MaxColumns)
+		if (colunm == 63)
 		{
 			++row;
 			colunm = 0;

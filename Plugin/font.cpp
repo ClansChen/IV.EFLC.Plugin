@@ -8,53 +8,32 @@
 namespace Font
 {
 	static const float fChsWidth = 32.0f;
+	static const float fSpriteWidth = 64.0f;
+	static const float fSpriteHeight = 80.0f;
 	static const float fTextureResolution = 4096.0f;
 	static const float fTextureRowsCount = 51.2f;
 	static const float fTextureColumnsCount = 64.0f;
-	static const float fSpriteWidth = 64.0f;
-	static const float fSpriteHeight = 80.0f;
-	static const float fRatio = fTextureColumnsCount / 16.0f;
+	static const float fRatio = 4.0f;
 
 	static CFontDetails *pDetails = Plugin::AddressByVersion(0x11F5BC8);
 	static CFontRenderState *pRenderState = Plugin::AddressByVersion(0xF38114);
 	static CFontInfo *pFonts = Plugin::AddressByVersion(0x11EC930);
 	static float *pFontResX = Plugin::AddressByVersion(0xF3814C);
 
-	static void *pChsTexture;
+	static void *pChsFont1;
+	static void *pChsFont2;
+	static void *pChsFont3;
 
 	bool IsNaiveCharacter(std::uint16_t character)
 	{
-		return (
-			character < 0x80 ||
-			character == 0xA9 ||
-			character == 0xAC ||
-			character == 0xAE ||
-			character == 0xC1 ||
-			character == 0xC9 ||
-			character == 0xD6 ||
-			character == 0xDC ||
-			character == 0xE0 ||
-			character == 0xE1 ||
-			character == 0xE7 ||
-			character == 0xE8 ||
-			character == 0xE9 ||
-			character == 0xEA ||
-			character == 0xED ||
-			character == 0xEF ||
-			character == 0xF1 ||
-			character == 0xF3 ||
-			character == 0xF5 ||
-			character == 0xFA ||
-			character == 0xFB ||
-			character == 0xFC ||
-			character == 0x99);
+		return (character < 0x100);
 	}
 
 	void *__fastcall LoadTextureCB(void *pDictionary, int, std::uint32_t hash)
 	{
 		void *result = Dictionary::GetElementByKey(pDictionary, hash);
 
-		pChsTexture = Dictionary::GetElementByKey(pDictionary, Hash::HashStringFromSeediCase("font4"));
+		pChsFont1 = Dictionary::GetElementByKey(pDictionary, Hash::HashStringFromSeediCase("font4"));
 
 		return result;
 	}
@@ -157,7 +136,7 @@ namespace Font
 		std::uint8_t row = Table::GetCharRow(character);
 		std::uint8_t column = Table::GetCharColumn(character);
 
-		float var_24 = fSpriteWidth / 4096.0f;
+		float var_24 = fSpriteWidth / fTextureResolution;
 		float var_28 = (fChsWidth / *pFontResX + pRenderState->fEdgeSize) * pRenderState->fScaleX;
 		float var_2C = pRenderState->fScaleY * 0.06558f;
 
@@ -175,27 +154,27 @@ namespace Font
 		texturerect.field_0 = column / 16;
 		texturerect.field_8 = column / 16 + var_24;
 
-		texturerect.field_C = (row - 0.045f / 4.0f) * 40.0f * 1.0f / 2048.0f + 4.0f * 1.0f / 2048.0f;
+		texturerect.field_C = (row - 0.045f / fRatio) * fSpriteHeight / fTextureResolution + 8.0f / fTextureResolution;
 		if (texturerect.field_C > 1.0f)
 		{
 			texturerect.field_C = 1.0f;
 		}
-		texturerect.field_4 = (row - 0.045f / 4.0f) * 40.0f * 1.0f / 2048.0f + 39.5f * 1.0f / 2048.0f - 0.001f / 4.0f + 0.0048f / 4.0f;
-		texturerect.field_0 = column / 16.0f / 4.0f;
-		texturerect.field_8 = column / 16.0f / 4.0f + var_24;
+		texturerect.field_4 = (row - 0.045f / fRatio) * fSpriteHeight / fTextureResolution + 79.0f / fTextureResolution - 0.001f / fRatio + 0.0048f / fRatio;
+		texturerect.field_0 = column / fTextureColumnsCount;
+		texturerect.field_8 = column / fTextureColumnsCount + var_24;
 
 		switch (pRenderState->nFont)
 		{
 		case 0:
-			Game::SetRenderState(pChsTexture);
+			Game::SetRenderState(pChsFont1);
 			break;
 
 		case 1:
-			Game::SetRenderState(pChsTexture);
+			Game::SetRenderState(pChsFont1);
 			break;
 
 		case 3:
-			Game::SetRenderState(pChsTexture);
+			Game::SetRenderState(pChsFont1);
 			break;
 
 		default:

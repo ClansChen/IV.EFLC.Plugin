@@ -1,4 +1,4 @@
-#include "plugin.h"
+﻿#include "plugin.h"
 #include "font.h"
 #include "table.h"
 
@@ -70,6 +70,8 @@ namespace Plugin
 		injector::MakeCALL(AddressByVersion(0x887CB6), Font::LoadTextureCB);
 
 		injector::MakeJMP(Plugin::AddressByVersion(0x8A3880), GetTextFileName);
+
+		//主菜单排版
 	}
 
 	void Init(HMODULE module)

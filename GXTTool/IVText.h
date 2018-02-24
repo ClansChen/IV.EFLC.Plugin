@@ -81,9 +81,6 @@ struct TDATHeader
 class IVText
 {
 public:
-	static const uint8_t MaxColumns = 64;
-	static const uint8_t MaxRows = 51;
-
 	typedef std::uint32_t tHash;
 	typedef std::basic_string<std::uint16_t> tWideString;
 	typedef std::pair<tHash, std::string> tEntry;

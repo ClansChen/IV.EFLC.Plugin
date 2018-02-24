@@ -143,6 +143,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="byte_pattern.cpp" />
     <ClCompile Include="dictionary.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="font.cpp" />
@@ -152,6 +153,7 @@
     <ClCompile Include="table.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="byte_pattern.h" />
     <ClInclude Include="dictionary.h" />
     <ClInclude Include="font.h" />
     <ClInclude Include="game.h" />
