@@ -104,7 +104,8 @@ void IVText::CollectCharacters(const string & text)
 void IVText::LoadText(const path &input_text)
 {
 	regex table_regex(R"(\[([0-9a-zA-Z_]{1,7})\])");
-	regex entry_regex(R"((0[xX][0-9a-fA-F]{8})=(.+))");
+	regex entry_regex(R"((0[xX][0-9a-fA-F]{8})=(.*))");
+	regex origin_regex(R"(;(0[xX][0-9a-fA-F]{8})=(.*))");
 
 	smatch matches;
 
@@ -113,7 +114,7 @@ void IVText::LoadText(const path &input_text)
 	map<string, vector<tEntry>, IVTextTableSorting>::iterator table_iter = m_Data.end();
 
 	size_t line_no = 0;
-
+	
 	ifstream stream(input_text);
 
 	if (!stream)
@@ -138,12 +139,6 @@ void IVText::LoadText(const path &input_text)
 			{
 				uint32_t hash = stoull(matches.str(1), nullptr, 16);
 				string text = matches.str(2);
-
-				//检查'~'的使用
-				if ((count(text.begin(), text.end(), '~') % 2) != 0)
-				{
-					cout << "第" << line_no << "行的波浪号坏掉了啦！" << endl;
-				}
 
 				CollectCharacters(text);
 
