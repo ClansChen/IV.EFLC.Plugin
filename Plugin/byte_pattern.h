@@ -7,112 +7,49 @@
 #include <cstddef>
 #include <vector>
 #include <string>
-#include <string_view>
 #include <fstream>
-#include <sstream>
 #include <utility>
-
-extern HMODULE pattern_default_module;
+#include <filesystem>
 
 class memory_pointer
 {
     union
     {
-        void *_pointer;
-        std::uintptr_t _address;
+        void *Pointer;
+        std::uintptr_t Address;
     };
 
 public:
     memory_pointer()
-        :_pointer{}
+        :Pointer{}
     {
 
     }
 
-    memory_pointer(void *pointer)
-        : _pointer(pointer)
+    memory_pointer(void *p)
+        : Pointer(p)
     {
     }
 
-    memory_pointer(std::uintptr_t address)
-        : _address(address)
+    memory_pointer(std::uintptr_t i)
+        : Address(i)
     {
     }
 
-    memory_pointer(const memory_pointer &rhs) = default;
-
-    std::uintptr_t integer(std::ptrdiff_t offset = 0) const
+    std::uintptr_t address(std::ptrdiff_t offset = 0) const
     {
-        return (this->_address + offset);
+        return (this->Address + offset);
     }
 
     template<typename T = void>
     T *pointer(std::ptrdiff_t offset = 0) const
     {
-        return reinterpret_cast<T *>(this->integer(offset));
-    }
-
-    bool operator==(const memory_pointer &rhs) const
-    {
-        return this->integer() == rhs.integer();
-    }
-
-    bool operator!=(const memory_pointer &rhs) const
-    {
-        return this->integer() != rhs.integer();
-    }
-
-    bool operator>(const memory_pointer &rhs) const
-    {
-        return this->integer() > rhs.integer();
-    }
-
-    bool operator<(const memory_pointer &rhs) const
-    {
-        return this->integer() < rhs.integer();
-    }
-
-    bool operator>=(const memory_pointer &rhs) const
-    {
-        return this->integer() >= rhs.integer();
-    }
-
-    bool operator<=(const memory_pointer &rhs) const
-    {
-        return this->integer() <= rhs.integer();
-    }
-
-    memory_pointer operator+(std::ptrdiff_t offset) const
-    {
-        return memory_pointer{ this->integer(offset) };
-    }
-
-    memory_pointer operator-(std::ptrdiff_t offset) const
-    {
-        return memory_pointer{ this->integer(-offset) };
-    }
-
-    memory_pointer &operator+=(std::ptrdiff_t offset)
-    {
-        this->_address += offset;
-        return *this;
-    }
-
-    memory_pointer &operator-=(std::ptrdiff_t offset)
-    {
-        this->_address -= offset;
-        return *this;
+        return reinterpret_cast<T *>(this->address(offset));
     }
 
     operator std::uintptr_t() const
     {
-        return this->integer();
-    }
-
-    template <typename T>
-    operator T*() const
-    {
-        return this->raw<T>();
+        return this->address();
     }
 };
 
@@ -126,6 +63,8 @@ class byte_pattern
 
     std::ptrdiff_t _bmbc[256];
 
+    static std::ofstream &log_stream();
+
     void transform_pattern(const char *pattern_literal);
     void get_module_ranges(memory_pointer module);
 
@@ -135,20 +74,21 @@ class byte_pattern
     void debug_output() const;
 
 public:
+    static void start_log(const wchar_t *module_name);
+    static void shutdown_log();
+
+    static byte_pattern &temp_instance();
+
     byte_pattern();
 
     byte_pattern &set_pattern(const char *pattern_literal);
-    byte_pattern &set_pattern(const void *data, std::size_t size);
-
+     
     byte_pattern &set_module();
     byte_pattern &set_module(memory_pointer module);
     byte_pattern &set_range(memory_pointer beg, memory_pointer end);
     byte_pattern &search();
 
     byte_pattern &find_pattern(const char *pattern_literal);
-    memory_pointer find_first(const char *pattern_literal);
-    byte_pattern &find_pattern(const void *data, std::size_t size);
-    memory_pointer find_first(const void *data, std::size_t size);
 
     memory_pointer get(std::size_t index) const;
     memory_pointer get_first() const;
@@ -167,5 +107,3 @@ public:
         }
     }
 };
-
-extern byte_pattern g_pattern;

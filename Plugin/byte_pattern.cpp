@@ -1,28 +1,44 @@
-﻿#include "byte_pattern.h"
+﻿//Core code from Hooking.Patterns
+//https://github.com/ThirteenAG/Hooking.Patterns
 
-byte_pattern g_pattern;
+#include "byte_pattern.h"
 
 using namespace std;
 
 memory_pointer byte_pattern::get(size_t index) const
 {
-    if (index >= this->_results.size())
-    {
-        stringstream sstr;
-
-        sstr << "Processing pattern: " << this->_literal << "\nTrying to access index " << index << " but only " << this->_results.size() << " results.";
-
-        MessageBoxA(NULL, sstr.str().c_str(), "byte_pattern: too few results.", MB_OK);
-
-        ExitProcess(0);
-    }
-
-    return this->_results[index];
+    return this->_results.at(index);
 }
 
 memory_pointer byte_pattern::get_first() const
 {
     return this->get(0);
+}
+
+void byte_pattern::start_log(const wchar_t *module_name)
+{
+    shutdown_log();
+
+    wchar_t exe_path[512];
+    wchar_t filename[512];
+    
+    swprintf(filename, L"pattern_%s.log", module_name);
+
+    GetModuleFileName(NULL, exe_path, 512);
+
+    log_stream().open(experimental::filesystem::v1::path{ exe_path }.parent_path() / filename, ios::trunc);
+}
+
+void byte_pattern::shutdown_log()
+{
+    log_stream().close();
+}
+
+byte_pattern & byte_pattern::temp_instance()
+{
+    static byte_pattern instance;
+
+    return instance;
 }
 
 byte_pattern::byte_pattern()
@@ -38,15 +54,6 @@ byte_pattern &byte_pattern::set_pattern(const char *pattern_literal)
     return *this;
 }
 
-byte_pattern &byte_pattern::set_pattern(const void *data, size_t size)
-{
-    this->_pattern.assign(reinterpret_cast<const uint8_t *>(data), reinterpret_cast<const uint8_t *>(data) + size);
-    this->_mask.assign(size, 0xFF);
-    this->bm_preprocess();
-
-    return *this;
-}
-
 byte_pattern & byte_pattern::set_module()
 {
     static HMODULE default_module = GetModuleHandleA(NULL);
@@ -57,13 +64,13 @@ byte_pattern & byte_pattern::set_module()
 byte_pattern &byte_pattern::set_module(memory_pointer module)
 {
     this->get_module_ranges(module);
-    
+
     return *this;
 }
 
 byte_pattern &byte_pattern::set_range(memory_pointer beg, memory_pointer end)
 {
-    this->_ranges.resize(1, make_pair(beg.integer(), end.integer()));
+    this->_ranges.resize(1, make_pair(beg.address(), end.address()));
 
     return *this;
 }
@@ -84,21 +91,11 @@ byte_pattern & byte_pattern::find_pattern(const char * pattern_literal)
     return *this;
 }
 
-memory_pointer byte_pattern::find_first(const char * pattern_literal)
+std::ofstream & byte_pattern::log_stream()
 {
-    return this->find_pattern(pattern_literal).get_first();
-}
+    static ofstream instance;
 
-byte_pattern & byte_pattern::find_pattern(const void * data, std::size_t size)
-{
-    this->set_pattern(data, size).search();
-
-    return *this;
-}
-
-memory_pointer byte_pattern::find_first(const void * data, std::size_t size)
-{
-    return this->find_pattern(data, size).get_first();
+    return instance;
 }
 
 void byte_pattern::transform_pattern(const char *pattern_literal)
@@ -203,7 +200,7 @@ void byte_pattern::get_module_ranges(memory_pointer module)
     };
 
     _ranges.clear();
-    std::pair<std::uintptr_t, std::uintptr_t> range;
+    pair<uintptr_t, uintptr_t> range;
 
     PIMAGE_DOS_HEADER dosHeader = module.pointer<IMAGE_DOS_HEADER>();
     PIMAGE_NT_HEADERS ntHeader = module.pointer<IMAGE_NT_HEADERS>(dosHeader->e_lfanew);
@@ -213,7 +210,7 @@ void byte_pattern::get_module_ranges(memory_pointer module)
         auto sec = getSection(ntHeader, i);
         auto secSize = sec->SizeOfRawData != 0 ? sec->SizeOfRawData : sec->Misc.VirtualSize;
 
-        range.first = module.integer() + sec->VirtualAddress;
+        range.first = module.address() + sec->VirtualAddress;
 
         if (memcmp((const char *)sec->Name, ".text", 6) == 0 || memcmp((const char *)sec->Name, ".rdata", 7) == 0)
         {
@@ -222,7 +219,7 @@ void byte_pattern::get_module_ranges(memory_pointer module)
         }
 
         if ((i == ntHeader->FileHeader.NumberOfSections - 1) && _ranges.empty())
-            this->_ranges.emplace_back(module.integer(), module.integer() + sec->PointerToRawData + secSize);
+            this->_ranges.emplace_back(module.address(), module.address() + sec->PointerToRawData + secSize);
     }
 }
 
@@ -323,25 +320,25 @@ void byte_pattern::bm_search()
 
 void byte_pattern::debug_output() const
 {
-    ofstream ofs{ "pattern_debug.log", ios::app };
+    if (!log_stream().is_open())
+        return;
 
-    ofs << hex << showbase;
+    log_stream() << hex << uppercase;
 
-    ofs << "Results of pattern: " << _literal << '\n';
-
+    log_stream() << "Result(s) of pattern: " << _literal << '\n';
+    
     if (count() > 0)
     {
         for_each_result(
-            [&ofs](memory_pointer p)
+            [this](memory_pointer pointer)
         {
-            ofs << p.integer() << '\n';
+            log_stream() << "0x" << pointer.address() << '\n';
         });
     }
     else
     {
-        ofs << "None\n";
+        log_stream() << "None\n";
     }
 
-    ofs << "--------------------------------------------------------------------------------------" << endl << endl;
+    log_stream() << "--------------------------------------------------------------------------------------" << '\n' << endl;
 }
-

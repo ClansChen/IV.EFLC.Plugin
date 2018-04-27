@@ -10,4 +10,4 @@
 #include "injector/hooking.hpp"
 #include "injector/calling.hpp"
 
-#define VALIDATE_SIZE(expr, size) static_assert(sizeof(expr) == size);
+#define VALIDATE_SIZE(expr, size) static_assert(sizeof(expr) == size, "Type size error.");
