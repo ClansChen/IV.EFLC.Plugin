@@ -7,492 +7,492 @@ using namespace experimental::filesystem::v1;
 
 void IVText::Process0Arg()
 {
-	wchar_t temp[512];
+    wchar_t temp[512];
 
-	HMODULE	self = GetModuleHandleW(NULL);
-	GetModuleFileNameW(self, temp, 512);
+    HMODULE self = GetModuleHandleW(NULL);
+    GetModuleFileNameW(self, temp, 512);
 
-	path text_path = temp;
-	text_path = text_path.parent_path();
+    tPath text_path = temp;
+    text_path = text_path.parent_path();
 
-	m_Data.clear();
-	m_Collection.clear();
+    m_Data.clear();
+    m_Collection.clear();
 
-	LoadText(text_path / "GTA4.txt");
-	GenerateBinary(text_path / "chinese.gxt");
-	GenerateCollection(text_path / "characters.txt");
-	GenerateTable(text_path / "table.dat");
+    LoadText(text_path / "GTA4.txt");
+    GenerateBinary(text_path / "chinese.gxt");
+    GenerateCollection(text_path / "characters.txt");
+    GenerateTable(text_path / "table.dat");
 }
 
-void IVText::Process2Args(const path &arg1, const path &arg2)
+void IVText::Process2Args(const tPath &arg1, const tPath &arg2)
 {
-	m_Data.clear();
-	m_Collection.clear();
+    m_Data.clear();
+    m_Collection.clear();
 
-	if (is_directory(arg1))
-	{
-		create_directories(arg2);
-		LoadTexts(arg1);
-		GenerateBinary(arg2 / "chinese.gxt");
-		GenerateCollection(arg2 / "characters.txt");
-		GenerateTable(arg2 / "table.dat");
-	}
-	else if (is_regular_file(arg1))
-	{
-		create_directories(arg2);
-		LoadBinary(arg1);
-		GenerateTexts(arg2);
-	}
+    if (is_directory(arg1))
+    {
+        create_directories(arg2);
+        LoadTexts(arg1);
+        GenerateBinary(arg2 / "chinese.gxt");
+        GenerateCollection(arg2 / "characters.txt");
+        GenerateTable(arg2 / "table.dat");
+    }
+    else if (is_regular_file(arg1))
+    {
+        create_directories(arg2);
+        LoadBinary(arg1);
+        GenerateTexts(arg2);
+    }
 }
 
 void IVText::SkipUTF8Signature(ifstream &stream)
 {
-	char bom[3];
+    char bom[3];
 
-	if (stream.get(bom[0]) && stream.get(bom[1]) && stream.get(bom[2]))
-	{
-		if (bom[0] == '\xEF' && bom[1] == '\xBB' && bom[2] == '\xBF')
-		{
-			return;
-		}
-	}
+    if (stream.get(bom[0]) && stream.get(bom[1]) && stream.get(bom[2]))
+    {
+        if (bom[0] == '\xEF' && bom[1] == '\xBB' && bom[2] == '\xBF')
+        {
+            return;
+        }
+    }
 
-	stream.seekg(0);
+    stream.seekg(0);
 }
 
 void IVText::AddUTF8Signature(ofstream &stream)
 {
-	stream << "\xEF\xBB\xBF";
+    stream << "\xEF\xBB\xBF";
 }
 
 IVText::tWideString IVText::ConvertToWide(const string &in)
 {
-	tWideString result;
-	utf8::utf8to16(in.begin(), in.end(), back_inserter(result));
-	return result;
+    tWideString result;
+    utf8::utf8to16(in.begin(), in.end(), back_inserter(result));
+    return result;
 }
 
 string IVText::ConvertToNarrow(const tWideString &in)
 {
-	string result;
-	utf8::utf16to8(in.begin(), in.end(), back_inserter(result));
-	return result;
+    string result;
+    utf8::utf16to8(in.begin(), in.end(), back_inserter(result));
+    return result;
 }
 
 bool IVText::IsNativeCharacter(uint16_t character)
 {
-	return (character < 0x100 || character == L'™');
+    return (character < 0x100 || character == L'™');
 }
 
 void IVText::CollectCharacters(const string & text)
 {
-	utf8::iterator<string::const_iterator> u8it(text.begin(), text.begin(), text.end());
+    utf8::iterator<string::const_iterator> u8it(text.begin(), text.begin(), text.end());
 
-	while (u8it.base() != text.end())
-	{
-		uint16_t character = *u8it;
+    while (u8it.base() != text.end())
+    {
+        uint16_t character = *u8it;
 
-		if (!IsNativeCharacter(character))
-		{
-			m_Collection.insert(character);
-		}
+        if (!IsNativeCharacter(character))
+        {
+            m_Collection.insert(character);
+        }
 
-		++u8it;
-	}
+        ++u8it;
+    }
 }
 
-void IVText::LoadText(const path &input_text)
+void IVText::LoadText(const tPath &input_text)
 {
-	regex table_regex(R"(\[([0-9a-zA-Z_]{1,7})\])");
-	regex entry_regex(R"((0[xX][0-9a-fA-F]{8})=(.*))");
-	regex origin_regex(R"(;(0[xX][0-9a-fA-F]{8})=(.*))");
+    regex table_regex(R"(\[([0-9a-zA-Z_]{1,7})\])");
+    regex entry_regex(R"((0[xX][0-9a-fA-F]{8})=(.*))");
+    regex origin_regex(R"(;(0[xX][0-9a-fA-F]{8})=(.*))");
 
-	smatch matches;
+    smatch matches;
 
-	string line;
+    string line;
 
-	map<string, vector<tEntry>, IVTextTableSorting>::iterator table_iter = m_Data.end();
+    auto table_iter = m_Data.end();
 
-	size_t line_no = 0;
-	
-	ifstream stream(input_text);
+    size_t line_no = 0;
 
-	if (!stream)
-	{
-		cout << "打开文件 " << input_text.string() << " 失败。" << endl;
-		return;
-	}
+    ifstream stream(input_text);
 
-	SkipUTF8Signature(stream);
+    if (!stream)
+    {
+        cout << "打开文件 " << input_text.string() << " 失败。" << endl;
+        return;
+    }
 
-	while (getline(stream, line))
-	{
-		++line_no;
+    SkipUTF8Signature(stream);
 
-		if (line.empty() || line.front() == ';')
-		{
+    while (getline(stream, line))
+    {
+        ++line_no;
 
-		}
-		else if (line.front() == '0' && regex_match(line, matches, entry_regex))
-		{
-			if (table_iter != m_Data.end())
-			{
-				uint32_t hash = stoull(matches.str(1), nullptr, 16);
-				string text = matches.str(2);
+        if (line.empty() || line.front() == ';')
+        {
 
-				CollectCharacters(text);
+        }
+        else if (line.front() == '0' && regex_match(line, matches, entry_regex))
+        {
+            if (table_iter != m_Data.end())
+            {
+                uint32_t hash = stoul(matches.str(1), nullptr, 16);
+                string text = matches.str(2);
 
-				table_iter->second.push_back(make_pair(hash, text));
-			}
-			else
-			{
-				cout << "第" << line_no << "行没有所属的表。" << endl;
-			}
-		}
-		else if (line.front() == '[' && regex_match(line, matches, table_regex))
-		{
-			string table_name = matches.str(1);
+                CollectCharacters(text);
 
-			tTable temp;
-			temp.first = table_name;
-			table_iter = m_Data.insert(temp).first;
-		}
-		else
-		{
-			cout << "第" << line_no << "行无法识别。" << endl;
-		}
-	}
+                table_iter->second.emplace_back(hash, text);
+            }
+            else
+            {
+                cout << "第" << line_no << "行没有所属的表。" << endl;
+            }
+        }
+        else if (line.front() == '[' && regex_match(line, matches, table_regex))
+        {
+            string table_name = matches.str(1);
+
+            tTable temp;
+            temp.first = table_name;
+            table_iter = m_Data.insert(temp).first;
+        }
+        else
+        {
+            cout << "第" << line_no << "行无法识别。" << endl;
+        }
+    }
 }
 
-void IVText::LoadTexts(const path &input_texts)
+void IVText::LoadTexts(const tPath &input_texts)
 {
-	directory_iterator dir_it{ input_texts };
+    directory_iterator dir_it{ input_texts };
 
-	while (dir_it != directory_iterator{})
-	{
-		path filename = dir_it->path();
+    while (dir_it != directory_iterator{})
+    {
+        tPath filename = dir_it->path();
 
-		LoadText(filename);
+        LoadText(filename);
 
-		++dir_it;
-	}
+        ++dir_it;
+    }
 }
 
-void IVText::GenerateBinary(const path & output_binary) const
+void IVText::GenerateBinary(const tPath & output_binary) const
 {
-	BinaryFile file(output_binary, BinaryFile::OpenMode::WriteOnly);
+    BinaryFile file(output_binary, BinaryFile::OpenMode::WriteOnly);
 
-	long long writePostion;
+    std::vector<uint8_t> buffer;
+    long long writePostion;
 
-	GXTHeader gxtHeader;
+    GXTHeader gxtHeader;
 
-	TABLHeader tablHeader;
-	TKEYHeader tkeyHeader;
-	TDATHeader tdatHeader;
+    TableBlock tableBlock;
+    KeyBlockOthers keyBlock;
 
-	TABLEntry tablEntry;
-	TKEYEntry tkeyEntry;
+    DataBlock dataBlock;
 
-	vector<TABLEntry> tablBlock;
-	vector<TKEYEntry> tkeyBlock;
-	vector<uint16_t> tdatBlock;
+    TableEntry tableEntry;
+    KeyEntry keyEntry;
 
-	tWideString wideText;
+    vector<TableEntry> tables;
+    vector<KeyEntry> keys;
+    vector<uint8_t> datas;
 
-	if (!file)
-	{
-		cout << "创建输出文件 " << output_binary.string() << " 失败。" << endl;
-		return;
-	}
+    tWideString wideText;
 
-	gxtHeader.Signature = 0x100004;
-	file.Write(gxtHeader);
+    if (!file)
+    {
+        cout << "创建输出文件 " << output_binary.string() << " 失败。" << endl;
+        return;
+    }
 
-	tablHeader.TABL[0] = 'T';
-	tablHeader.TABL[1] = 'A';
-	tablHeader.TABL[2] = 'B';
-	tablHeader.TABL[3] = 'L';
+    gxtHeader.Version = 4;
+    gxtHeader.CharBits = 16;
+    file.Write(gxtHeader);
 
-	tkeyHeader.Header.TKEY[0] = 'T';
-	tkeyHeader.Header.TKEY[1] = 'K';
-	tkeyHeader.Header.TKEY[2] = 'E';
-	tkeyHeader.Header.TKEY[3] = 'Y';
+    tableBlock.TABL[0] = 'T';
+    tableBlock.TABL[1] = 'A';
+    tableBlock.TABL[2] = 'B';
+    tableBlock.TABL[3] = 'L';
 
-	tdatHeader.TDAT[0] = 'T';
-	tdatHeader.TDAT[1] = 'D';
-	tdatHeader.TDAT[2] = 'A';
-	tdatHeader.TDAT[3] = 'T';
+    keyBlock.Body.TKEY[0] = 'T';
+    keyBlock.Body.TKEY[1] = 'K';
+    keyBlock.Body.TKEY[2] = 'E';
+    keyBlock.Body.TKEY[3] = 'Y';
 
-	tablHeader.Size = m_Data.size() * sizeof(TABLEntry);
-	file.Write(tablHeader);
+    dataBlock.TDAT[0] = 'T';
+    dataBlock.TDAT[1] = 'D';
+    dataBlock.TDAT[2] = 'A';
+    dataBlock.TDAT[3] = 'T';
 
-	writePostion = 4 + sizeof(TABLHeader) + tablHeader.Size;
+    tableBlock.Size = m_Data.size() * sizeof(TableEntry);
+    file.Write(tableBlock);
 
-	tablBlock.clear();
+    writePostion = 4 + 8 + tableBlock.Size;
 
-	for (auto &table : m_Data)
-	{
-		tkeyBlock.clear();
-		tdatBlock.clear();
+    tables.clear();
 
-		strcpy(tablEntry.Name, table.first.c_str());
-		tablEntry.Offset = writePostion;
-		tablBlock.push_back(tablEntry);
+    for (auto &table : m_Data)
+    {
+        keys.clear();
+        datas.clear();
 
-		strcpy(tkeyHeader.Name, table.first.c_str());
-		tkeyHeader.Header.Size = table.second.size() * sizeof(TKEYEntry);
+        strcpy(tableEntry.Name, table.first.c_str());
+        tableEntry.Offset = static_cast<int>(writePostion);
+        tables.push_back(tableEntry);
 
-		for (auto &key : table.second)
-		{
-			tkeyEntry.Hash = key.first;
-			tkeyEntry.Offset = tdatBlock.size() * 2;
+        strcpy(keyBlock.Name, table.first.c_str());
+        keyBlock.Body.Size = table.second.size() * sizeof(KeyEntry);
 
-			wideText = ConvertToWide(key.second);
-			LiteralToGame(wideText);
+        for (auto &key : table.second)
+        {
+            keyEntry.Hash = key.first;
+            keyEntry.Offset = datas.size() * 2;
 
-			copy(wideText.begin(), wideText.end(), back_inserter(tdatBlock));
-			tdatBlock.push_back(0);
+            wideText = ConvertToWide(key.second);
+            LiteralToGame(wideText);
 
-			tkeyBlock.push_back(tkeyEntry);
-		}
+            copy(wideText.begin(), wideText.end(), back_inserter(datas));
+            datas.push_back(0);
 
-		tdatHeader.Size = tdatBlock.size() * 2;
+            keys.push_back(keyEntry);
+        }
 
-		file.Seek(writePostion, BinaryFile::SeekMode::Begin);
+        dataBlock.Size = datas.size() * 2;
 
-		if (table.first == "MAIN")
-		{
-			file.Write(tkeyHeader.Header);
-		}
-		else
-		{
-			file.Write(tkeyHeader);
-		}
+        file.Seek(writePostion, BinaryFile::SeekMode::Begin);
 
-		file.WriteArray(tkeyBlock);
-		file.Write(tdatHeader);
-		file.WriteArray(tdatBlock);
+        if (table.first == "MAIN")
+        {
+            file.Write(keyBlock.Body);
+        }
+        else
+        {
+            file.Write(keyBlock);
+        }
 
-		writePostion = file.Tell();
-	}
+        file.WriteArray(keys);
+        file.Write(dataBlock);
+        file.WriteArray(datas);
 
-	file.Seek(4 + sizeof(TABLHeader), BinaryFile::SeekMode::Begin);
-	file.WriteArray(tablBlock);
+        writePostion = file.Tell();
+    }
+
+    file.Seek(4 + 8, BinaryFile::SeekMode::Begin);
+    file.WriteArray(tables);
 }
 
-void IVText::GenerateCollection(const path & output_text) const
+void IVText::GenerateCollection(const tPath & output_text) const
 {
-	vector<char> sequence;
+    vector<char> sequence;
 
-	size_t count = 0;
+    size_t count = 0;
 
-	for (auto char_it = m_Collection.begin(); char_it != m_Collection.end(); ++char_it)
-	{
-		if (count == 63)
-		{
-			sequence.push_back('\n');
-			count = 0;
-		}
+    for (auto char_it = m_Collection.begin(); char_it != m_Collection.end(); ++char_it)
+    {
+        if (count == 63)
+        {
+            sequence.push_back('\n');
+            count = 0;
+        }
 
-		utf8::append(*char_it, back_inserter(sequence));
-		++count;
-	}
+        utf8::append(*char_it, back_inserter(sequence));
+        ++count;
+    }
 
-	ofstream stream(output_text, ios::trunc);
+    ofstream stream(output_text, ios::trunc);
 
-	AddUTF8Signature(stream);
+    AddUTF8Signature(stream);
 
-	copy(sequence.begin(), sequence.end(), ostreambuf_iterator<char>(stream));
+    copy(sequence.begin(), sequence.end(), ostreambuf_iterator<char>(stream));
 }
 
-void IVText::GenerateTable(const path & output_binary) const
+void IVText::GenerateTable(const tPath & output_binary) const
 {
-	uint8_t data[0x20000];
+    uint8_t data[0x20000];
 
-	for (size_t index = 0; index < 0x10000; ++index)
-	{
-		data[index * 2] = 50;
-		data[index * 2 + 1] = 63;
-	}
+    for (size_t index = 0; index < 0x10000; ++index)
+    {
+        data[index * 2] = 50;
+        data[index * 2 + 1] = 63;
+    }
 
-	uint8_t row = 0, colunm = 0;
+    uint8_t row = 0, colunm = 0;
 
-	for (auto character : m_Collection)
-	{
-		if (colunm == 63)
-		{
-			++row;
-			colunm = 0;
-		}
+    for (auto character : m_Collection)
+    {
+        if (colunm == 63)
+        {
+            ++row;
+            colunm = 0;
+        }
 
-		data[character * 2] = row;
-		data[character * 2 + 1] = colunm;
+        data[character * 2] = row;
+        data[character * 2 + 1] = colunm;
 
-		++colunm;
-	}
+        ++colunm;
+    }
 
-	BinaryFile stream(output_binary, BinaryFile::OpenMode::WriteOnly);
+    BinaryFile stream(output_binary, BinaryFile::OpenMode::WriteOnly);
 
-	stream.Write(data, 0x20000);
+    stream.Write(data, 0x20000);
 }
 
 void IVText::FixCharacters(tWideString &wtext)
 {
-	//bad character in IV stock text: 0x85 0x92 0x94 0x96 0x97 0xA0
-	//bad character in EFLC stock text: 0x93
+    //bad character in IV stock text: 0x85 0x92 0x94 0x96 0x97 0xA0
+    //bad character in EFLC stock text: 0x93
 
-	for (auto &character : wtext)
-	{
-		switch (character)
-		{
-		case 0x85:
-			character = L' ';
-			break;
+    for (auto &character : wtext)
+    {
+        switch (character)
+        {
+        case 0x85:
+            character = L' ';
+            break;
 
-		case 0x92:
-		case 0x94:
-			character = L'\'';
-			break;
+        case 0x92:
+        case 0x94:
+            character = L'\'';
+            break;
 
-		case 0x93: //EFLC
-			break;
+        case 0x93: //EFLC
+            break;
 
-		case 0x96:
-			character = L'-';
-			break;
+        case 0x96:
+            character = L'-';
+            break;
 
-		case 0x97:
-		case 0xA0:
-			character = L' ';
-			break;
+        case 0x97:
+        case 0xA0:
+            character = L' ';
+            break;
 
-		default:
-			break;
-		}
-	}
+        default:
+            break;
+        }
+    }
 }
 
 void IVText::LiteralToGame(tWideString & wtext)
 {
-	for (auto &character : wtext)
-	{
-		switch (character)
-		{
-		case L'™':
-			character = 0x99;
-			break;
+    for (auto &character : wtext)
+    {
+        switch (character)
+        {
+        case L'™':
+            character = 0x99;
+            break;
 
-		default:
-			break;
-		}
-	}
+        default:
+            break;
+        }
+    }
 }
 
 void IVText::GameToLiteral(tWideString & wtext)
 {
-	for (auto &character : wtext)
-	{
-		switch (character)
-		{
-		case 0x99:
-			character = L'™';
-			break;
+    for (auto &character : wtext)
+    {
+        switch (character)
+        {
+        case 0x99:
+            character = L'™';
+            break;
 
-		default:
-			break;
-		}
-	}
+        default:
+            break;
+        }
+    }
 }
 
-void IVText::LoadBinary(const path & input_binary)
+void IVText::LoadBinary(const tPath & input_binary)
 {
-	GXTHeader gxtHeader;
-	TABLHeader tablHeader;
-	TKEYHeader tkeyHeader;
-	TDATHeader tdatHeader;
+    GXTHeader gxtHeader;
+    TableBlock tableBlock;
+    KeyBlockOthers keyBlock;
+    DataBlock tdatHeader;
 
-	vector<TABLEntry> tablBlock;
-	vector<TKEYEntry> tkeyBlock;
-	vector<char> tdatBlock;
+    vector<TableEntry> tables;
+    vector<KeyEntry> keys;
+    vector<uint16_t> datas;
 
-	m_Data.clear();
-	m_Collection.clear();
+    m_Data.clear();
 
-	map<string, vector<tEntry>, IVTextTableSorting>::iterator tableIter = m_Data.end();
+    auto tableIter = m_Data.end();
 
-	BinaryFile file(input_binary, BinaryFile::OpenMode::ReadOnly);
+    BinaryFile file(input_binary, BinaryFile::OpenMode::ReadOnly);
 
-	if (!file)
-	{
-		cout << "打开输入文件 " << input_binary.string() << " 失败。" << endl;
-		return;
-	}
+    if (!file)
+    {
+        cout << "打开输入文件 " << input_binary.string() << " 失败。" << endl;
+        return;
+    }
 
-	file.Read(gxtHeader);
+    file.Read(gxtHeader);
 
-	file.Read(tablHeader);
+    file.Read(tableBlock);
 
-	file.ReadArray(tablHeader.Size / sizeof(TABLEntry), tablBlock);
+    file.ReadArray(tableBlock.Size / sizeof(TableEntry), tables);
 
-	for (TABLEntry &table : tablBlock)
-	{
-		tableIter = m_Data.insert(tTable(table.Name, vector<tEntry>())).first;
+    for (TableEntry &table : tables)
+    {
+        tableIter = m_Data.insert(tTable(table.Name, vector<tEntry>())).first;
 
-		file.Seek(table.Offset, BinaryFile::SeekMode::Begin);
+        file.Seek(table.Offset, BinaryFile::SeekMode::Begin);
 
-		if (strcmp(table.Name, "MAIN") != 0)
-		{
-			file.Read(tkeyHeader);
-		}
-		else
-		{
-			file.Read(tkeyHeader.Header);
-		}
+        if (strcmp(table.Name, "MAIN") != 0)
+        {
+            file.Read(keyBlock);
+        }
+        else
+        {
+            file.Read(keyBlock.Body);
+        }
 
-		file.ReadArray(tkeyHeader.Header.Size / sizeof(TKEYEntry), tkeyBlock);
+        file.ReadArray(keyBlock.Body.Size / sizeof(KeyEntry), keys);
 
-		file.Read(tdatHeader);
+        file.Read(tdatHeader);
 
-		file.ReadArray(tdatHeader.Size, tdatBlock);
+        file.ReadArray(tdatHeader.Size / 2, datas);
 
-		for (auto &key : tkeyBlock)
-		{
-			tWideString wtext = (uint16_t *)(&tdatBlock[key.Offset]);
+        for (auto &key : keys)
+        {
+            tWideString wtext = &datas[key.Offset];
 
-			FixCharacters(wtext);
-			GameToLiteral(wtext);
+            FixCharacters(wtext);
+            GameToLiteral(wtext);
 
-			tableIter->second.push_back(make_pair(key.Hash, ConvertToNarrow(wtext)));
-		}
-	}
+            tableIter->second.emplace_back(key.Hash, ConvertToNarrow(wtext));
+        }
+    }
 }
 
-void IVText::GenerateTexts(const path & output_texts) const
+void IVText::GenerateTexts(const tPath & output_texts) const
 {
-	ofstream stream;
+    ofstream stream;
+    std::string line;
 
-	for (auto &table : m_Data)
-	{
-		stream.open(output_texts / (table.first + ".txt"), ios::trunc);
+    for (auto &table : m_Data)
+    {
+        stream.open(output_texts / (table.first + ".txt"), ios::trunc);
 
-		if (!stream)
-		{
-			cout << "创建输出文件失败" << endl;
-		}
+        if (!stream)
+        {
+            cout << "创建输出文件失败" << endl;
+        }
 
-		AddUTF8Signature(stream);
+        AddUTF8Signature(stream);
 
-		stream << '[' << table.first << ']' << '\n';
+        stream << fmt::sprintf("[%s]\n", table.first);
 
-		stream << hex << uppercase;
-		stream.precision(8);
+        for (auto &entry : table.second)
+        {
+            line = fmt::sprintf("0x%08X=%s\n", entry.first, entry.second);
+            stream << ';' << line << line;
+        }
 
-		for (auto &entry : table.second)
-		{
-			stream << ';' << "0x" << entry.first << '=' << entry.second << '\n';
-			stream << "0x" << entry.first << '=' << entry.second << '\n' << '\n';
-		}
-
-		stream.close();
-	}
+        stream.close();
+    }
 }

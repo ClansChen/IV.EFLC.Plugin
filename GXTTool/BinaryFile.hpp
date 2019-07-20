@@ -1,156 +1,155 @@
-#pragma once
+﻿#pragma once
 #include <cstddef>
 #include <filesystem>
 #include <cstdio>
 #include <type_traits>
-#include <memory>
 #include <vector>
 
-struct FilePtrDeleter
-{
-	void operator()(std::FILE *file) const
-	{
-		std::fclose(file);
-	}
-};
 
 class BinaryFile
 {
 public:
-	enum class OpenMode
-	{
-		ReadOnly,
-		WriteOnly,
-		ReadWrite
-	};
+    enum class OpenMode
+    {
+        ReadOnly,
+        WriteOnly,
+        ReadWrite
+    };
 
-	enum class SeekMode
-	{
-		Begin,
-		Current,
-		End
-	};
+    enum class SeekMode
+    {
+        Begin,
+        Current,
+        End
+    };
 
-	BinaryFile() = default;
+    BinaryFile() = default;
 
-	BinaryFile(const std::experimental::filesystem::v1::path &filename, OpenMode method)
-	{
-		Open(filename, method);
-	}
+    BinaryFile(const std::experimental::filesystem::v1::path &filename, OpenMode method)
+    {
+        Open(filename, method);
+    }
 
-	void Open(const std::experimental::filesystem::v1::path &filename, OpenMode method)
-	{
-		const char *method_str;
+    bool Open(const std::experimental::filesystem::v1::path &filename, OpenMode method)
+    {
+        const char *method_str;
 
-		switch (method)
-		{
-		case BinaryFile::OpenMode::ReadOnly:
-			method_str = "rb";
-			break;
+        Close();
 
-		case BinaryFile::OpenMode::WriteOnly:
-			method_str = "wb";
-			break;
+        switch (method)
+        {
+        case OpenMode::ReadOnly:
+            method_str = "rb";
+            break;
 
-		case OpenMode::ReadWrite:
-			method_str = "rb+";
-			break;
+        case OpenMode::WriteOnly:
+            method_str = "wb";
+            break;
 
-		default:
-			return;
-		}
+        case OpenMode::ReadWrite:
+            method_str = "rb+";
+            break;
 
-		m_pFile.reset(std::fopen(filename.string().c_str(), method_str));
-	}
+        default:
+            return false;
+        }
 
-	void Close()
-	{
-		m_pFile.reset();
-	}
+        m_pFile = std::fopen(filename.string().c_str(), method_str);
+        return (m_pFile != nullptr);
+    }
 
-	bool Opened() const
-	{
-		return (bool)m_pFile;
-	}
+    void Close()
+    {
+        if (m_pFile != nullptr)
+        {
+            std::fclose(m_pFile);
+            m_pFile = nullptr;
+        }
+    }
 
-	operator bool() const
-	{
-		return Opened();
-	}
+    bool Opened() const
+    {
+        return m_pFile != nullptr;
+    }
 
-	BinaryFile &Seek(std::int64_t offset, SeekMode mode)
-	{
-		int temp;
+    operator bool() const
+    {
+        return Opened();
+    }
 
-		switch (mode)
-		{
-		case BinaryFile::SeekMode::Begin:
-			temp = SEEK_SET;
-			break;
+    BinaryFile &Seek(std::int64_t offset, SeekMode mode)
+    {
+        int temp;
 
-		case BinaryFile::SeekMode::Current:
-			temp = SEEK_CUR;
-			break;
+        switch (mode)
+        {
+        case SeekMode::Begin:
+            temp = SEEK_SET;
+            break;
 
-		case BinaryFile::SeekMode::End:
-			temp = SEEK_END;
-			break;
+        case SeekMode::Current:
+            temp = SEEK_CUR;
+            break;
 
-		default:
-			return *this;
-		}
+        case SeekMode::End:
+            temp = SEEK_END;
+            break;
 
-		_fseeki64(m_pFile.get(), offset, temp);
+        default:
+            return *this;
+        }
 
-		return *this;
-	}
+        _fseeki64(m_pFile, offset, temp);
 
-	std::int64_t Tell() const
-	{
-		return _ftelli64(m_pFile.get());
-	}
+        return *this;
+    }
 
-	BinaryFile &Read(void *buffer, std::size_t size)
-	{
-		std::fread(buffer, size, 1, m_pFile.get());
-		return *this;
-	}
+    std::int64_t Tell() const
+    {
+        return _ftelli64(m_pFile);
+    }
 
-	template <typename T>
-	std::enable_if_t<std::is_trivial_v<T>, BinaryFile &> Read(T &object)
-	{
-		Read(&object, sizeof(object));
-		return *this;
-	}
+    BinaryFile &Read(void *buffer, std::size_t size)
+    {
+        std::fread(buffer, size, 1, m_pFile);
+        return *this;
+    }
 
-	template <typename T>
-	std::enable_if_t<std::is_trivial_v<T>, BinaryFile &> ReadArray(std::size_t count, std::vector<T> &objects)
-	{
-		objects.resize(count);
-		Read(objects.data(), sizeof(T) * count);
-		return *this;
-	}
+    template <typename T>
+    std::enable_if_t<std::is_pod_v<T>, BinaryFile &> Read(T &object)
+    {
+        Read(&object, sizeof(object));
+        return *this;
+    }
 
-	BinaryFile &Write(const void *buffer, std::size_t size)
-	{
-		std::fwrite(buffer, size, 1, m_pFile.get());
-		return *this;
-	}
+    template <typename T>
+    std::enable_if_t<std::is_pod_v<T>, BinaryFile &> ReadArray(std::size_t count, std::vector<T> &objects)
+    {
+        objects.resize(count);
+        Read(objects.data(), sizeof(T) * count);
+        return *this;
+    }
 
-	template <typename T>
-	std::enable_if_t<std::is_trivial_v<T>, BinaryFile &> Write(const T &object)
-	{
-		Write(&object, sizeof(object));
-		return *this;
-	}
+    BinaryFile &Write(const void *buffer, std::size_t size)
+    {
+        std::fwrite(buffer, size, 1, m_pFile);
+        return *this;
+    }
 
-	template <typename T>
-	std::enable_if_t<std::is_trivial_v<T>, BinaryFile &> WriteArray(const std::vector<T> &objects)
-	{
-		Write(objects.data(), sizeof(T) * objects.size());
-		return *this;
-	}
+    template <typename T>
+    std::enable_if_t<std::is_pod_v<T>, BinaryFile &> Write(const T &object)
+    {
+        Write(&object, sizeof(object));
+        return *this;
+    }
+
+    template <typename T>
+    std::enable_if_t<std::is_pod_v<T>, BinaryFile &> WriteArray(const std::vector<T> &objects)
+    {
+        Write(objects.data(), sizeof(T) * objects.size());
+        return *this;
+    }
 
 private:
-	std::unique_ptr<std::FILE, FilePtrDeleter> m_pFile;
+    std::FILE * m_pFile = nullptr;
 };
