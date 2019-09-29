@@ -2,7 +2,7 @@
 
 static std::uint8_t table[0x20000];
 
-void Table::LoadTable(const std::experimental::filesystem::v1::path &filename)
+void Table::LoadTable(const std::filesystem::path &filename)
 {
     std::ifstream input(filename, std::ios_base::binary);
 

@@ -5,7 +5,6 @@
 #include <type_traits>
 #include <vector>
 
-
 class BinaryFile
 {
 public:
@@ -25,12 +24,12 @@ public:
 
     BinaryFile() = default;
 
-    BinaryFile(const std::experimental::filesystem::v1::path &filename, OpenMode method)
+    BinaryFile(const std::filesystem::path &filename, OpenMode method)
     {
         Open(filename, method);
     }
 
-    bool Open(const std::experimental::filesystem::v1::path &filename, OpenMode method)
+    bool Open(const std::filesystem::path &filename, OpenMode method)
     {
         const char *method_str;
 
