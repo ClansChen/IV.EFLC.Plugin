@@ -1,4 +1,4 @@
-﻿#include <windows.h>
+﻿#include <Windows.h>
 #include "IVText.h"
 #include "BinaryFile.hpp"
 
@@ -68,7 +68,20 @@ void IVText::AddUTF8Signature(ofstream &stream)
 IVText::tWideString IVText::ConvertToWide(const string &in)
 {
     tWideString result;
-    utf8::utf8to16(in.begin(), in.end(), back_inserter(result));
+    vector<uint32_t> wideBuffer;
+    utf8::utf8to32(in.begin(), in.end(), back_inserter(wideBuffer));
+
+    std::copy_if(wideBuffer.begin(), wideBuffer.end(), back_inserter(result),
+        [](uint32_t chr) {
+        if (chr > 0xFFFF)
+        {
+            cout << fmt::format("字符{:X}超过2字节，已丢弃", chr) << endl;
+            return false;
+        }
+
+        return true;
+    });
+
     return result;
 }
 
@@ -197,7 +210,7 @@ void IVText::GenerateBinary(const tPath & output_binary) const
 
     vector<TableEntry> tables;
     vector<KeyEntry> keys;
-    vector<uint8_t> datas;
+    vector<uint16_t> datas;
 
     tWideString wideText;
 
@@ -481,6 +494,7 @@ void IVText::GenerateTexts(const tPath & output_texts) const
         if (!stream)
         {
             cout << "创建输出文件失败" << endl;
+            return;
         }
 
         AddUTF8Signature(stream);

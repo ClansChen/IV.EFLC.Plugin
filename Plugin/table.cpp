@@ -1,4 +1,5 @@
-﻿#include "table.h"
+﻿#include "stdinc.h"
+#include "table.h"
 
 static std::uint8_t table[0x20000];
 

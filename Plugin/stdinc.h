@@ -1,5 +1,5 @@
-#pragma once
-#include <windows.h>
+﻿#pragma once
+#include <Windows.h>
 #include <cstdint>
 #include <cstddef>
 #include <cstring>
@@ -7,6 +7,17 @@
 #include <vector>
 #include <filesystem>
 #include <fstream>
+#include <functional>
+#include <array>
+#include <utility>
+#include <unordered_map>
+#include <string>
+#include <iterator>
+#include <algorithm>
+#include <chrono>
+#include <fmt/printf.h>
+#include <boost/utility/string_view.hpp>
+#include <boost/algorithm/string.hpp>
 #include "injector/hooking.hpp"
 #include "injector/calling.hpp"
 

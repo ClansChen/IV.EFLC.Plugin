@@ -36,6 +36,9 @@
     <ClCompile Include="table.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="stdinc.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dictionary.h">

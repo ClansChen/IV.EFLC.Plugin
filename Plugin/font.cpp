@@ -1,4 +1,5 @@
-﻿#include "font.h"
+﻿#include "stdinc.h"
+#include "font.h"
 #include "game.h"
 #include "plugin.h"
 #include "table.h"
@@ -15,10 +16,10 @@ namespace Font
     static const float fTextureColumnsCount = 64.0f;
     static const float fRatio = 4.0f;
 
-    static CFontDetails *pDetails = Plugin::AddressByVersion(0x11F5BC8);
-    static CFontRenderState *pRenderState = Plugin::AddressByVersion(0xF38114);
-    static CFontInfo *pFonts = Plugin::AddressByVersion(0x11EC930);
-    static float *pFontResX = Plugin::AddressByVersion(0xF3814C);
+    static CFontDetails *pDetails = Game::AddressByVersion(0x11F5BC8);
+    static CFontRenderState *pRenderState = Game::AddressByVersion(0xF38114);
+    static CFontInfo *pFonts = Game::AddressByVersion(0x11EC930);
+    static float *pFontResX = Game::AddressByVersion(0xF3814C);
 
     static void *pChsFont1;
     static void *pChsFont2;
@@ -86,7 +87,7 @@ namespace Font
     {
         if (IsNaiveCharacter(character + 0x20))
         {
-            return injector::cstd<float(std::uint16_t)>::call(Plugin::AddressByVersion(0x884110), character);
+            return injector::cstd<float(std::uint16_t)>::call(Game::AddressByVersion(0x884110), character);
         }
         else
         {
@@ -110,7 +111,7 @@ namespace Font
     {
         if (IsNaiveCharacter(character + 0x20))
         {
-            return injector::cstd<float(std::uint16_t, bool)>::call(Plugin::AddressByVersion(0x874040), character, useextrawidth);
+            return injector::cstd<float(std::uint16_t, bool)>::call(Game::AddressByVersion(0x874040), character, useextrawidth);
         }
         else
         {
@@ -180,14 +181,14 @@ namespace Font
             break;
         }
 
-        injector::cstd<void(rageRect *, rageRect *, std::uint32_t, int)>::call(Plugin::AddressByVersion(0x884300), &screenrect, &texturerect, pRenderState->field_18, 0);
+        injector::cstd<void(rageRect *, rageRect *, std::uint32_t, int)>::call(Game::AddressByVersion(0x884300), &screenrect, &texturerect, pRenderState->field_18, 0);
     }
 
     void PrintCharDispatch(float posx, float posy, std::uint16_t character, int mode)
     {
         if (pRenderState->TokenType != 0 || IsNaiveCharacter(character + 0x20))
         {
-            injector::cstd<void(float, float, std::uint16_t, int)>::call(Plugin::AddressByVersion(0x8843E0), posx, posy, character, mode);
+            injector::cstd<void(float, float, std::uint16_t, int)>::call(Game::AddressByVersion(0x8843E0), posx, posy, character, mode);
         }
         else
         {

@@ -5,15 +5,15 @@
 #include <type_traits>
 #include <vector>
 
-
 class BinaryFile
 {
 public:
     enum class OpenMode
     {
-        ReadOnly,
-        WriteOnly,
-        ReadWrite
+        ReadOnly = 1,
+        WriteOnly = 2,
+        ReadWrite = 4,
+        Trunc = 8
     };
 
     enum class SeekMode
@@ -28,6 +28,14 @@ public:
     BinaryFile(const std::experimental::filesystem::v1::path &filename, OpenMode method)
     {
         Open(filename, method);
+    }
+
+    ~BinaryFile()
+    {
+        if (m_pFile != nullptr)
+        {
+            std::fclose(m_pFile);
+        }
     }
 
     bool Open(const std::experimental::filesystem::v1::path &filename, OpenMode method)
