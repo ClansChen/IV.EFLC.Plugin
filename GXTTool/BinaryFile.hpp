@@ -10,10 +10,9 @@ class BinaryFile
 public:
     enum class OpenMode
     {
-        ReadOnly = 1,
-        WriteOnly = 2,
-        ReadWrite = 4,
-        Trunc = 8
+        ReadOnly,
+        WriteOnly,
+        ReadWrite
     };
 
     enum class SeekMode
@@ -25,20 +24,12 @@ public:
 
     BinaryFile() = default;
 
-    BinaryFile(const std::experimental::filesystem::v1::path &filename, OpenMode method)
+    BinaryFile(const std::filesystem::path &filename, OpenMode method)
     {
         Open(filename, method);
     }
 
-    ~BinaryFile()
-    {
-        if (m_pFile != nullptr)
-        {
-            std::fclose(m_pFile);
-        }
-    }
-
-    bool Open(const std::experimental::filesystem::v1::path &filename, OpenMode method)
+    bool Open(const std::filesystem::path &filename, OpenMode method)
     {
         const char *method_str;
 

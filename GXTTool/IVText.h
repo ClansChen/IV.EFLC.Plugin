@@ -92,7 +92,7 @@ public:
     typedef std::basic_string<std::uint16_t> tWideString;
     typedef std::pair<tHash, std::string> tEntry;
     typedef std::pair<std::string, std::vector<tEntry>> tTable;
-    typedef std::experimental::filesystem::v1::path tPath;
+    typedef std::filesystem::path tPath;
 
     //不带参数，读取同一目录下GTA4.txt生成汉化补丁相关文件 
     void Process0Arg();

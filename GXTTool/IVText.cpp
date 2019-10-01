@@ -3,7 +3,7 @@
 #include "BinaryFile.hpp"
 
 using namespace std;
-using namespace experimental::filesystem::v1;
+using namespace filesystem;
 
 void IVText::Process0Arg()
 {
@@ -19,9 +19,13 @@ void IVText::Process0Arg()
     m_Collection.clear();
 
     LoadText(text_path / "GTA4.txt");
-    GenerateBinary(text_path / "chinese.gxt");
-    GenerateCollection(text_path / "characters.txt");
-    GenerateTable(text_path / "table.dat");
+
+    if (!m_Data.empty())
+    {
+        GenerateBinary(text_path / "chinese.gxt");
+        GenerateCollection(text_path / "characters.txt");
+        GenerateTable(text_path / "table.dat");
+    }
 }
 
 void IVText::Process2Args(const tPath &arg1, const tPath &arg2)
@@ -125,6 +129,7 @@ void IVText::LoadText(const tPath &input_text)
     string line;
 
     auto table_iter = m_Data.end();
+    std::string filename = input_text.filename().string();
 
     size_t line_no = 0;
 
@@ -141,6 +146,10 @@ void IVText::LoadText(const tPath &input_text)
     while (getline(stream, line))
     {
         ++line_no;
+
+        //去除头尾的空格
+        line.erase(0, line.find_first_not_of(' '));
+        line.erase(line.find_last_not_of(' ') + 1);
 
         if (line.empty() || line.front() == ';')
         {
@@ -159,7 +168,7 @@ void IVText::LoadText(const tPath &input_text)
             }
             else
             {
-                cout << "第" << line_no << "行没有所属的表。" << endl;
+                cout << filename << ": " << "第" << line_no << "行没有所属的表。" << endl;
             }
         }
         else if (line.front() == '[' && regex_match(line, matches, table_regex))
@@ -172,7 +181,7 @@ void IVText::LoadText(const tPath &input_text)
         }
         else
         {
-            cout << "第" << line_no << "行无法识别。" << endl;
+            cout << filename << ": " << "第" << line_no << "行无法识别。" << endl;
         }
     }
 }
@@ -304,7 +313,7 @@ void IVText::GenerateCollection(const tPath & output_text) const
 
     for (auto char_it = m_Collection.begin(); char_it != m_Collection.end(); ++char_it)
     {
-        if (count == 63)
+        if (count == 64)
         {
             sequence.push_back('\n');
             count = 0;
