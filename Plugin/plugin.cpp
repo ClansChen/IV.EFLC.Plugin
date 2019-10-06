@@ -39,7 +39,7 @@ namespace Plugin
     {
         wchar_t PluginPath[512];
         GetModuleFileNameW(module, PluginPath, 512);
-        Table::LoadTable(std::filesystem::path{ PluginPath }.parent_path() / "wmhhz/table.dat");
+        Table::LoadTable(std::filesystem::path{ PluginPath }.parent_path() / "GTAIV.CHS/table.dat");
 
         Patch();
     }

@@ -16,7 +16,7 @@
 #include <regex>
 #include <fstream>
 #include <iterator>
-#include <utf8.h>
+#include "include/utf8cpp/utf8.h"
 
 #define FMT_HEADER_ONLY
 #include "include/fmt/printf.h"
@@ -94,7 +94,7 @@ public:
     typedef std::pair<std::string, std::vector<tEntry>> tTable;
     typedef std::filesystem::path tPath;
 
-    //不带参数，读取同一目录下GTA4.txt生成汉化补丁相关文件 
+    //不带参数，读取同一目录下GTA4.txt生成汉化补丁相关文件
     void Process0Arg();
 
     //文件, 目录，读取GXT文件并存放在指定目录下

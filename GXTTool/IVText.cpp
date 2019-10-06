@@ -1,9 +1,9 @@
-﻿#include <Windows.h>
+﻿#include <windows.h>
 #include "IVText.h"
 #include "BinaryFile.hpp"
 
 using namespace std;
-using namespace filesystem;
+using namespace std::filesystem;
 
 void IVText::Process0Arg()
 {
@@ -72,20 +72,7 @@ void IVText::AddUTF8Signature(ofstream &stream)
 IVText::tWideString IVText::ConvertToWide(const string &in)
 {
     tWideString result;
-    vector<uint32_t> wideBuffer;
-    utf8::utf8to32(in.begin(), in.end(), back_inserter(wideBuffer));
-
-    std::copy_if(wideBuffer.begin(), wideBuffer.end(), back_inserter(result),
-        [](uint32_t chr) {
-        if (chr > 0xFFFF)
-        {
-            cout << fmt::format("字符{:X}超过2字节，已丢弃", chr) << endl;
-            return false;
-        }
-
-        return true;
-    });
-
+    utf8::utf8to16(in.begin(), in.end(), back_inserter(result));
     return result;
 }
 
@@ -147,7 +134,6 @@ void IVText::LoadText(const tPath &input_text)
     {
         ++line_no;
 
-        //去除头尾的空格
         line.erase(0, line.find_first_not_of(' '));
         line.erase(line.find_last_not_of(' ') + 1);
 
@@ -344,7 +330,7 @@ void IVText::GenerateTable(const tPath & output_binary) const
 
     for (auto character : m_Collection)
     {
-        if (colunm == 63)
+        if (colunm == 64)
         {
             ++row;
             colunm = 0;
@@ -503,7 +489,6 @@ void IVText::GenerateTexts(const tPath & output_texts) const
         if (!stream)
         {
             cout << "创建输出文件失败" << endl;
-            return;
         }
 
         AddUTF8Signature(stream);
