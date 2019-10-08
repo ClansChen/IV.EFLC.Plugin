@@ -1,25 +1,5 @@
 ﻿#pragma once
-#include <iostream>
-#include <cstdint>
-#include <cstdio>
-#include  <cstdlib>
-#include <filesystem>
-#include <cstring>
-#include <string>
-#include <set>
-#include <vector>
-#include <array>
-#include <regex>
-#include <utility>
-#include <map>
-#include <algorithm>
-#include <regex>
-#include <fstream>
-#include <iterator>
-#include "include/utf8cpp/utf8.h"
-
-#define FMT_HEADER_ONLY
-#include "include/fmt/printf.h"
+#include "../common/stdinc.h"
 
 struct IVTextTableSorting
 {

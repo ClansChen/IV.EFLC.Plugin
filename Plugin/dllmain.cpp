@@ -1,5 +1,4 @@
-﻿#include "stdinc.h"
-#include "plugin.h"
+﻿#include "plugin.h"
 
 BOOL WINAPI DllMain(HMODULE module, DWORD reason, void *reserved)
 {

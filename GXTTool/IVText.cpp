@@ -1,6 +1,4 @@
-﻿#include <windows.h>
-#include "IVText.h"
-#include "BinaryFile.hpp"
+﻿#include "IVText.h"
 
 using namespace std;
 using namespace std::filesystem;
@@ -28,7 +26,7 @@ void IVText::Process0Arg()
     }
 }
 
-void IVText::Process2Args(const tPath &arg1, const tPath &arg2)
+void IVText::Process2Args(const tPath& arg1, const tPath& arg2)
 {
     m_Data.clear();
     m_Collection.clear();
@@ -49,7 +47,7 @@ void IVText::Process2Args(const tPath &arg1, const tPath &arg2)
     }
 }
 
-void IVText::SkipUTF8Signature(ifstream &stream)
+void IVText::SkipUTF8Signature(ifstream& stream)
 {
     char bom[3];
 
@@ -64,19 +62,19 @@ void IVText::SkipUTF8Signature(ifstream &stream)
     stream.seekg(0);
 }
 
-void IVText::AddUTF8Signature(ofstream &stream)
+void IVText::AddUTF8Signature(ofstream& stream)
 {
     stream << "\xEF\xBB\xBF";
 }
 
-IVText::tWideString IVText::ConvertToWide(const string &in)
+IVText::tWideString IVText::ConvertToWide(const string& in)
 {
     tWideString result;
     utf8::utf8to16(in.begin(), in.end(), back_inserter(result));
     return result;
 }
 
-string IVText::ConvertToNarrow(const tWideString &in)
+string IVText::ConvertToNarrow(const tWideString& in)
 {
     string result;
     utf8::utf16to8(in.begin(), in.end(), back_inserter(result));
@@ -88,7 +86,7 @@ bool IVText::IsNativeCharacter(uint16_t character)
     return (character < 0x100 || character == L'™');
 }
 
-void IVText::CollectCharacters(const string & text)
+void IVText::CollectCharacters(const string& text)
 {
     utf8::iterator<string::const_iterator> u8it(text.begin(), text.begin(), text.end());
 
@@ -105,7 +103,7 @@ void IVText::CollectCharacters(const string & text)
     }
 }
 
-void IVText::LoadText(const tPath &input_text)
+void IVText::LoadText(const tPath& input_text)
 {
     regex table_regex(R"(\[([0-9a-zA-Z_]{1,7})\])");
     regex entry_regex(R"((0[xX][0-9a-fA-F]{8})=(.*))");
@@ -172,7 +170,7 @@ void IVText::LoadText(const tPath &input_text)
     }
 }
 
-void IVText::LoadTexts(const tPath &input_texts)
+void IVText::LoadTexts(const tPath& input_texts)
 {
     directory_iterator dir_it{ input_texts };
 
@@ -186,7 +184,7 @@ void IVText::LoadTexts(const tPath &input_texts)
     }
 }
 
-void IVText::GenerateBinary(const tPath & output_binary) const
+void IVText::GenerateBinary(const tPath& output_binary) const
 {
     BinaryFile file(output_binary, BinaryFile::OpenMode::WriteOnly);
 
@@ -241,7 +239,7 @@ void IVText::GenerateBinary(const tPath & output_binary) const
 
     tables.clear();
 
-    for (auto &table : m_Data)
+    for (auto& table : m_Data)
     {
         keys.clear();
         datas.clear();
@@ -253,7 +251,7 @@ void IVText::GenerateBinary(const tPath & output_binary) const
         strcpy(keyBlock.Name, table.first.c_str());
         keyBlock.Body.Size = table.second.size() * sizeof(KeyEntry);
 
-        for (auto &key : table.second)
+        for (auto& key : table.second)
         {
             keyEntry.Hash = key.first;
             keyEntry.Offset = datas.size() * 2;
@@ -291,7 +289,7 @@ void IVText::GenerateBinary(const tPath & output_binary) const
     file.WriteArray(tables);
 }
 
-void IVText::GenerateCollection(const tPath & output_text) const
+void IVText::GenerateCollection(const tPath& output_text) const
 {
     vector<char> sequence;
 
@@ -316,43 +314,39 @@ void IVText::GenerateCollection(const tPath & output_text) const
     copy(sequence.begin(), sequence.end(), ostreambuf_iterator<char>(stream));
 }
 
-void IVText::GenerateTable(const tPath & output_binary) const
+void IVText::GenerateTable(const tPath& output_binary) const
 {
-    uint8_t data[0x20000];
+    vector<CharacterDataForReading> data;
 
-    for (size_t index = 0; index < 0x10000; ++index)
+    CharacterDataForReading aaa;
+
+    aaa.pos.row = 0;
+    aaa.pos.column = 0;
+
+    for (auto chr : m_Collection)
     {
-        data[index * 2] = 50;
-        data[index * 2 + 1] = 63;
-    }
-
-    uint8_t row = 0, colunm = 0;
-
-    for (auto character : m_Collection)
-    {
-        if (colunm == 64)
+        aaa.character = chr;
+        if (aaa.pos.column == 64)
         {
-            ++row;
-            colunm = 0;
+            ++aaa.pos.row;
+            aaa.pos.column = 0;
         }
 
-        data[character * 2] = row;
-        data[character * 2 + 1] = colunm;
+        data.push_back(aaa);
 
-        ++colunm;
+        ++aaa.pos.column;
     }
 
     BinaryFile stream(output_binary, BinaryFile::OpenMode::WriteOnly);
-
-    stream.Write(data, 0x20000);
+    stream.WriteArray(data);
 }
 
-void IVText::FixCharacters(tWideString &wtext)
+void IVText::FixCharacters(tWideString& wtext)
 {
     //bad character in IV stock text: 0x85 0x92 0x94 0x96 0x97 0xA0
     //bad character in EFLC stock text: 0x93
 
-    for (auto &character : wtext)
+    for (auto& character : wtext)
     {
         switch (character)
         {
@@ -383,9 +377,9 @@ void IVText::FixCharacters(tWideString &wtext)
     }
 }
 
-void IVText::LiteralToGame(tWideString & wtext)
+void IVText::LiteralToGame(tWideString& wtext)
 {
-    for (auto &character : wtext)
+    for (auto& character : wtext)
     {
         switch (character)
         {
@@ -399,9 +393,9 @@ void IVText::LiteralToGame(tWideString & wtext)
     }
 }
 
-void IVText::GameToLiteral(tWideString & wtext)
+void IVText::GameToLiteral(tWideString& wtext)
 {
-    for (auto &character : wtext)
+    for (auto& character : wtext)
     {
         switch (character)
         {
@@ -415,7 +409,7 @@ void IVText::GameToLiteral(tWideString & wtext)
     }
 }
 
-void IVText::LoadBinary(const tPath & input_binary)
+void IVText::LoadBinary(const tPath& input_binary)
 {
     GXTHeader gxtHeader;
     TableBlock tableBlock;
@@ -444,7 +438,7 @@ void IVText::LoadBinary(const tPath & input_binary)
 
     file.ReadArray(tableBlock.Size / sizeof(TableEntry), tables);
 
-    for (TableEntry &table : tables)
+    for (TableEntry& table : tables)
     {
         tableIter = m_Data.insert(tTable(table.Name, vector<tEntry>())).first;
 
@@ -465,7 +459,7 @@ void IVText::LoadBinary(const tPath & input_binary)
 
         file.ReadArray(tdatHeader.Size / 2, datas);
 
-        for (auto &key : keys)
+        for (auto& key : keys)
         {
             tWideString wtext = &datas[key.Offset];
 
@@ -477,12 +471,12 @@ void IVText::LoadBinary(const tPath & input_binary)
     }
 }
 
-void IVText::GenerateTexts(const tPath & output_texts) const
+void IVText::GenerateTexts(const tPath& output_texts) const
 {
     ofstream stream;
     std::string line;
 
-    for (auto &table : m_Data)
+    for (auto& table : m_Data)
     {
         stream.open(output_texts / (table.first + ".txt"), ios::trunc);
 
@@ -495,7 +489,7 @@ void IVText::GenerateTexts(const tPath & output_texts) const
 
         stream << fmt::sprintf("[%s]\n", table.first);
 
-        for (auto &entry : table.second)
+        for (auto& entry : table.second)
         {
             line = fmt::sprintf("0x%08X=%s\n", entry.first, entry.second);
             stream << ';' << line << line;

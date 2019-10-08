@@ -36,7 +36,7 @@
     <ClCompile Include="table.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="stdinc.cpp">
+    <ClCompile Include="byte_pattern.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -59,7 +59,7 @@
     <ClInclude Include="table.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="stdinc.h">
+    <ClInclude Include="byte_pattern.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

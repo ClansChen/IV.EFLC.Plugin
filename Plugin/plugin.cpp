@@ -1,5 +1,4 @@
-﻿#include "stdinc.h"
-#include "plugin.h"
+﻿#include "plugin.h"
 #include "font.h"
 #include "table.h"
 #include "game.h"
@@ -39,7 +38,7 @@ namespace Plugin
     {
         wchar_t PluginPath[512];
         GetModuleFileNameW(module, PluginPath, 512);
-        Table::LoadTable(std::filesystem::path{ PluginPath }.parent_path() / "GTAIV.CHS/table.dat");
+        globalTable.LoadTable(std::filesystem::path{ PluginPath }.parent_path() / "GTAIV.CHS/table.dat");
 
         Patch();
     }

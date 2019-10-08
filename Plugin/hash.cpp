@@ -1,5 +1,4 @@
-﻿#include "stdinc.h"
-#include "hash.h"
+﻿#include "hash.h"
 #include "game.h"
 
 namespace Hash

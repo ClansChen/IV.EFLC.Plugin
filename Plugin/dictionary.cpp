@@ -1,5 +1,4 @@
-﻿#include "stdinc.h"
-#include "dictionary.h"
+﻿#include "dictionary.h"
 #include "game.h"
 
 namespace Dictionary

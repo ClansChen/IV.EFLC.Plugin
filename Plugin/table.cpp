@@ -1,30 +1,35 @@
-﻿#include "stdinc.h"
-#include "table.h"
+﻿#include "table.h"
 
-static std::uint8_t table[0x20000];
+CCharacterTable globalTable;
 
-void Table::LoadTable(const std::filesystem::path &filename)
+void CCharacterTable::LoadTable(const std::filesystem::path& filename)
 {
-    std::ifstream input(filename, std::ios_base::binary);
+    std::vector<CharacterDataForReading> buffer;
 
-    for (std::size_t index = 0; index < 0x10000; ++index)
-    {
-        table[index * 2] = 50;
-        table[index * 2 + 1] = 63;
-    }
+    BinaryFile file(filename, BinaryFile::OpenMode::ReadOnly);
 
-    if (input)
+    file.Seek(0, BinaryFile::SeekMode::End);
+    auto size = file.Tell();
+    file.Seek(0, BinaryFile::SeekMode::Begin);
+    file.ReadArray(size / sizeof(CharacterDataForReading), buffer);
+
+    m_Table.reserve(buffer.size() * 2);
+    for (auto& entry : buffer)
     {
-        input.read(reinterpret_cast<char *>(table), 0x20000);
+        m_Table.insert_or_assign(entry.character, entry.pos);
     }
 }
 
-std::uint8_t Table::GetCharRow(std::uint16_t character)
+CharacterPos CCharacterTable::GetCharPos(std::uint16_t chr) const
 {
-    return table[character * 2];
-}
+    auto it = m_Table.find(chr);
 
-std::uint8_t Table::GetCharColumn(std::uint16_t character)
-{
-    return table[character * 2 + 1];
+    if (it == m_Table.end())
+    {
+        return CharacterPos{ 50,63 }; //字库中此位置绘制白色方块
+    }
+    else
+    {
+        return it->second;
+    }
 }

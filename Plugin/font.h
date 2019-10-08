@@ -1,14 +1,14 @@
 ﻿#pragma once
-#include "stdinc.h"
+#include "../common/stdinc.h"
 
 namespace Font
 {
     struct rageRect
     {
-        float field_0;
-        float field_4;
-        float field_8;
-        float field_C;
+        float fBottomLeftX;
+        float fBottomLeftY;
+        float fTopRightX;
+        float fTopRightY;
     };
 
     class CFontDetails
@@ -45,7 +45,7 @@ namespace Font
 
     VALIDATE_SIZE(CFontDetails, 0x48)
 
-        class CFontInfo
+    class CFontInfo
     {
     public:
         std::uint8_t iPropValues[255];
@@ -63,7 +63,7 @@ namespace Font
         std::int32_t iSubFont2End;
         std::int32_t iCommonFontStart;
         std::int32_t iCommonFontEnd;
-        void *pTexture;
+        void* pTexture;
         float fTextureWidth;
         float fTextureHeight;
         float fSpriteSize;
@@ -106,11 +106,11 @@ namespace Font
     float GetCharacterSizeDrawingDispatch(std::uint16_t, bool);
     float GetCHSCharacterSizeDrawing(bool);
 
-    std::uint16_t *SkipAWord(std::uint16_t *);
+    std::uint16_t* SkipAWord(std::uint16_t*);
 
     void PrintCharDispatch(float, float, std::uint16_t, int);
     void PrintCHSChar(float, float, std::uint16_t);
 
-    void *__fastcall LoadTextureCB(void *, int, std::uint32_t);
+    void* __fastcall LoadTextureCB(void*, int, std::uint32_t);
     void GetStringWidthHook();
 }

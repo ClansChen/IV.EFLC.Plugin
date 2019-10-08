@@ -1,10 +1,15 @@
 ﻿#pragma once
-#include "stdinc.h"
+#include "../common/stdinc.h"
 
-namespace Table
+class CCharacterTable
 {
-    void LoadTable(const std::filesystem::path &);
+public:
 
-    std::uint8_t GetCharRow(std::uint16_t);
-    std::uint8_t GetCharColumn(std::uint16_t);
+    void LoadTable(const std::filesystem::path& filename);
+    CharacterPos GetCharPos(std::uint16_t chr) const;
+
+private:
+    std::unordered_map<std::uint32_t, CharacterPos> m_Table;
 };
+
+extern CCharacterTable globalTable;

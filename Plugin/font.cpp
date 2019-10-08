@@ -1,5 +1,4 @@
-﻿#include "stdinc.h"
-#include "font.h"
+﻿#include "font.h"
 #include "game.h"
 #include "plugin.h"
 #include "table.h"
@@ -18,12 +17,9 @@ namespace Font
 
     static CFontDetails *pDetails = Game::AddressByVersion(0x11F5BC8);
     static CFontRenderState *pRenderState = Game::AddressByVersion(0xF38114);
-    static CFontInfo *pFonts = Game::AddressByVersion(0x11EC930);
     static float *pFontResX = Game::AddressByVersion(0xF3814C);
 
-    static void *pChsFont1;
-    static void *pChsFont2;
-    static void *pChsFont3;
+    static void *pChsFont;
 
     bool IsNaiveCharacter(std::uint16_t character)
     {
@@ -34,7 +30,7 @@ namespace Font
     {
         void *result = Dictionary::GetElementByKey(pDictionary, hash);
 
-        pChsFont1 = Dictionary::GetElementByKey(pDictionary, Hash::HashStringFromSeediCase("font4"));
+        pChsFont = Dictionary::GetElementByKey(pDictionary, Hash::HashStringFromSeediCase("font4"));
 
         return result;
     }
@@ -133,48 +129,32 @@ namespace Font
             return;
         }
 
-        std::uint8_t row = Table::GetCharRow(character);
-        std::uint8_t column = Table::GetCharColumn(character);
+        auto pos = globalTable.GetCharPos(character);
 
-        float var_24 = fSpriteWidth / fTextureResolution;
-        float var_28 = (fChsWidth / *pFontResX + pRenderState->fEdgeSize) * pRenderState->fScaleX;
-        float var_2C = pRenderState->fScaleY * 0.06558f;
+        float sprite_width = fSpriteWidth / fTextureResolution;
+        float character_width = (fChsWidth / *pFontResX + pRenderState->fEdgeSize) * pRenderState->fScaleX;
+        float character_height = pRenderState->fScaleY * 0.06558f;
 
-        screenrect.field_0 = posx;
-        screenrect.field_4 = posy + var_2C;
-        screenrect.field_8 = posx + var_28;
-        screenrect.field_C = posy;
+        screenrect.fBottomLeftX = posx;
+        screenrect.fBottomLeftY = posy + character_height;
+        screenrect.fTopRightX = posx + character_width;
+        screenrect.fTopRightY = posy;
 
-        //texturerect.field_C = (row - 0.045f) * 40 * 1 / 512 + 4 * 1 / 512;
-        //if (texturerect.field_C > 1.0f)
-        //{
-        //    texturerect.field_C = 1.0f;
-        //}
-        //texturerect.field_4 = (row - 0.045f) * 40 * 1 / 512 + 39.5f * 1 / 512 - 0.001f + 0.0048f;
-        //texturerect.field_0 = column / 16.0f;
-        //texturerect.field_8 = column / 16.0f + var_24;
-
-        texturerect.field_C = (row - 0.045f / fRatio) * fSpriteHeight / fTextureResolution + 8.0f / fTextureResolution;
-        if (texturerect.field_C > 1.0f)
+        texturerect.fTopRightY = (pos.row - 0.045f / fRatio) * fSpriteHeight / fTextureResolution + 8.0f / fTextureResolution;
+        if (texturerect.fTopRightY > 1.0f)
         {
-            texturerect.field_C = 1.0f;
+            texturerect.fTopRightY = 1.0f;
         }
-        texturerect.field_4 = (row - 0.045f / fRatio) * fSpriteHeight / fTextureResolution + 79.0f / fTextureResolution - 0.001f / fRatio + 0.0048f / fRatio;
-        texturerect.field_0 = column / fTextureColumnsCount;
-        texturerect.field_8 = column / fTextureColumnsCount + var_24;
+        texturerect.fBottomLeftY = (pos.row - 0.045f / fRatio) * fSpriteHeight / fTextureResolution + 79.0f / fTextureResolution - 0.001f / fRatio + 0.0048f / fRatio;
+        texturerect.fBottomLeftX = pos.column / fTextureColumnsCount;
+        texturerect.fTopRightX = pos.column / fTextureColumnsCount + sprite_width;
 
         switch (pRenderState->nFont)
         {
         case 0:
-            Game::SetRenderState(pChsFont1);
-            break;
-
         case 1:
-            Game::SetRenderState(pChsFont1);
-            break;
-
         case 3:
-            Game::SetRenderState(pChsFont1);
+            Game::SetRenderState(pChsFont);
             break;
 
         default:
@@ -198,7 +178,7 @@ namespace Font
 
     __declspec(naked) void GetStringWidthHook()
     {
-        static void *retaddr;
+        static void* retaddr;
 
         __asm
         {

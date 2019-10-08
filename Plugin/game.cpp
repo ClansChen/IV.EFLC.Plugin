@@ -1,5 +1,4 @@
-﻿#include "stdinc.h"
-#include "game.h"
+﻿#include "game.h"
 
 enum class eGameVersion
 {
