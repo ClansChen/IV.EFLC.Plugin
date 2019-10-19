@@ -63,4 +63,7 @@
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="Note.txt" />
+  </ItemGroup>
 </Project>

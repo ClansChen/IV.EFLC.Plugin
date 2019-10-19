@@ -316,29 +316,29 @@ void IVText::GenerateCollection(const tPath& output_text) const
 
 void IVText::GenerateTable(const tPath& output_binary) const
 {
-    vector<CharacterDataForReading> data;
+    vector<CharacterDataForIO> datas;
 
-    CharacterDataForReading aaa;
+    CharacterDataForIO data;
 
-    aaa.pos.row = 0;
-    aaa.pos.column = 0;
+    data.pos.row = 0;
+    data.pos.column = 0;
 
     for (auto chr : m_Collection)
     {
-        aaa.character = chr;
-        if (aaa.pos.column == 64)
+        data.character = chr;
+        if (data.pos.column == 64)
         {
-            ++aaa.pos.row;
-            aaa.pos.column = 0;
+            ++data.pos.row;
+            data.pos.column = 0;
         }
 
-        data.push_back(aaa);
+        datas.push_back(data);
 
-        ++aaa.pos.column;
+        ++data.pos.column;
     }
 
     BinaryFile stream(output_binary, BinaryFile::OpenMode::WriteOnly);
-    stream.WriteArray(data);
+    stream.WriteArray(datas);
 }
 
 void IVText::FixCharacters(tWideString& wtext)

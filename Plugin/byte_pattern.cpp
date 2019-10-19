@@ -368,9 +368,9 @@ void byte_pattern::debug_output() const
     {
         for_each_result(
             [this](memory_pointer pointer)
-        {
-            log_stream() << "0x" << (pointer.i() - this->_range.first + 0x400400) << " | " << make_bytes_literal(pointer, _pattern.size()) << '\n';
-        });
+            {
+                log_stream() << "0x" << (pointer.i() - this->_range.first + 0x400400) << " | " << make_bytes_literal(pointer, _pattern.size()) << '\n';
+            });
     }
     else
     {

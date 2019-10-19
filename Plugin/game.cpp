@@ -52,11 +52,13 @@ namespace Game
 
     void SetRenderState(void *pTexture, int arg_4)
     {
+        //80 7C 24 08 00 A1
         injector::cstd<void(void*, int)>::call(AddressByVersion(0x85CF60), pTexture, arg_4);
     }
 
     std::uint8_t GetRenderIndex()
     {
+        //A1 ? ? ? ? 83 F8 FF 75 1E
         return injector::cstd<std::uint8_t()>::call(AddressByVersion(0x8840B0));
     }
 }

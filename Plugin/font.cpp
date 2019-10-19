@@ -15,8 +15,11 @@ namespace Font
     static const float fTextureColumnsCount = 64.0f;
     static const float fRatio = 4.0f;
 
+    //8D 0C C5 (? ? ? ?) 51 8D
     static CFontDetails *pDetails = Game::AddressByVersion(0x11F5BC8);
+    //83 C6 2C 83 C7 01 81 FE (? ? ? ?)
     static CFontRenderState *pRenderState = Game::AddressByVersion(0xF38114);
+    //D8 35 (? ? ? ?) 5E D8 05
     static float *pFontResX = Game::AddressByVersion(0xF3814C);
 
     static void *pChsFont;
@@ -83,6 +86,7 @@ namespace Font
     {
         if (IsNaiveCharacter(character + 0x20))
         {
+            //83 EC 08 56 57 E8
             return injector::cstd<float(std::uint16_t)>::call(Game::AddressByVersion(0x884110), character);
         }
         else
@@ -107,6 +111,7 @@ namespace Font
     {
         if (IsNaiveCharacter(character + 0x20))
         {
+            //51 A0 ? ? ? ? 0F B6 15
             return injector::cstd<float(std::uint16_t, bool)>::call(Game::AddressByVersion(0x874040), character, useextrawidth);
         }
         else
@@ -161,6 +166,7 @@ namespace Font
             break;
         }
 
+        //83 EC 10 8B 44 24 14 F3 0F 7E 00
         injector::cstd<void(rageRect *, rageRect *, std::uint32_t, int)>::call(Game::AddressByVersion(0x884300), &screenrect, &texturerect, pRenderState->field_18, 0);
     }
 
@@ -168,6 +174,7 @@ namespace Font
     {
         if (pRenderState->TokenType != 0 || IsNaiveCharacter(character + 0x20))
         {
+            //83 EC 34 83 3D ? ? ? ? FF
             injector::cstd<void(float, float, std::uint16_t, int)>::call(Game::AddressByVersion(0x8843E0), posx, posy, character, mode);
         }
         else

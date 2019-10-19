@@ -49,7 +49,7 @@ struct KeyBlockMAIN
 {
     char TKEY[4];
     std::int32_t Size;
-    //KeyEntry Entries[Size / 8];
+
 };
 
 struct KeyBlockOthers

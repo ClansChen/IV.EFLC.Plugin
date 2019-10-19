@@ -4,14 +4,14 @@ CCharacterTable globalTable;
 
 void CCharacterTable::LoadTable(const std::filesystem::path& filename)
 {
-    std::vector<CharacterDataForReading> buffer;
+    std::vector<CharacterDataForIO> buffer;
 
     BinaryFile file(filename, BinaryFile::OpenMode::ReadOnly);
 
     file.Seek(0, BinaryFile::SeekMode::End);
     auto size = file.Tell();
     file.Seek(0, BinaryFile::SeekMode::Begin);
-    file.ReadArray(size / sizeof(CharacterDataForReading), buffer);
+    file.ReadArray(size / sizeof(CharacterDataForIO), buffer);
 
     m_Table.reserve(buffer.size() * 2);
     for (auto& entry : buffer)

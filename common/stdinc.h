@@ -38,7 +38,7 @@ struct CharacterPos
     std::uint32_t row, column;
 };
 
-struct CharacterDataForReading
+struct CharacterDataForIO
 {
     std::uint32_t character;
     CharacterPos pos;
