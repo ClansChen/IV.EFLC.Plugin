@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="dictionary.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="dllmain.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -25,9 +22,6 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="game.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="hash.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="plugin.cpp">
@@ -41,16 +35,10 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="dictionary.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="font.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="game.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="hash.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="plugin.h">

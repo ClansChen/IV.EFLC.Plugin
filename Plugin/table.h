@@ -4,7 +4,6 @@
 class CCharacterTable
 {
 public:
-
     void LoadTable(const std::filesystem::path& filename);
     CharacterPos GetCharPos(std::uint16_t chr) const;
 

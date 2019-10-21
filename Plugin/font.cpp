@@ -2,8 +2,6 @@
 #include "game.h"
 #include "plugin.h"
 #include "table.h"
-#include "dictionary.h"
-#include "hash.h"
 
 namespace Font
 {
@@ -15,38 +13,31 @@ namespace Font
     static const float fTextureColumnsCount = 64.0f;
     static const float fRatio = 4.0f;
 
-    //8D 0C C5 (? ? ? ?) 51 8D
-    static CFontDetails *pDetails = Game::AddressByVersion(0x11F5BC8);
-    //83 C6 2C 83 C7 01 81 FE (? ? ? ?)
-    static CFontRenderState *pRenderState = Game::AddressByVersion(0xF38114);
-    //D8 35 (? ? ? ?) 5E D8 05
-    static float *pFontResX = Game::AddressByVersion(0xF3814C);
-
-    static void *pChsFont;
+    static void* pChsFont;
 
     bool IsNaiveCharacter(std::uint16_t character)
     {
         return (character < 0x100);
     }
 
-    void *__fastcall LoadTextureCB(void *pDictionary, int, std::uint32_t hash)
+    void* __fastcall LoadTextureCB(void* pDictionary, int, std::uint32_t hash)
     {
-        void *result = Dictionary::GetElementByKey(pDictionary, hash);
+        void* result = Game::Dictionary_GetElementByKey(pDictionary, hash);
 
-        pChsFont = Dictionary::GetElementByKey(pDictionary, Hash::HashStringFromSeediCase("font4"));
+        pChsFont = Game::Dictionary_GetElementByKey(pDictionary, Game::Hash_HashStringFromSeediCase("font4"));
 
         return result;
     }
 
-    std::uint16_t *SkipAWord(std::uint16_t *text)
+    std::uint16_t* SkipAWord(std::uint16_t* text)
     {
         if (!text)
         {
             return text;
         }
 
-        std::uint16_t *begin = text;
-        std::uint16_t *current = text;
+        std::uint16_t* begin = text;
+        std::uint16_t* current = text;
 
         while (true)
         {
@@ -77,17 +68,16 @@ namespace Font
 
     float GetCHSCharacterSizeNormal()
     {
-        std::uint8_t index = Game::GetRenderIndex();
+        std::uint8_t index = Game::Graphics_GetRenderIndex();
 
-        return ((fChsWidth / *pFontResX + pDetails[index].fEdgeSize2) * pDetails[index].fScaleX);
+        return ((fChsWidth / *Game::Addresses.pFont_ResolutionX + Game::Addresses.pFont_Details[index].fEdgeSize2) * Game::Addresses.pFont_Details[index].fScaleX);
     }
 
     float GetCharacterSizeNormalDispatch(std::uint16_t character)
     {
         if (IsNaiveCharacter(character + 0x20))
         {
-            //83 EC 08 56 57 E8
-            return injector::cstd<float(std::uint16_t)>::call(Game::AddressByVersion(0x884110), character);
+            return Game::Font_GetCharacterSizeNormal(character);
         }
         else
         {
@@ -104,15 +94,14 @@ namespace Font
             extrawidth = 1.0f;
         }
 
-        return (((fChsWidth + extrawidth) / *pFontResX + pRenderState->fEdgeSize) * pRenderState->fScaleX);
+        return (((fChsWidth + extrawidth) / *Game::Addresses.pFont_ResolutionX + Game::Addresses.pFont_RenderState->fEdgeSize) * Game::Addresses.pFont_RenderState->fScaleX);
     }
 
     float GetCharacterSizeDrawingDispatch(std::uint16_t character, bool useextrawidth)
     {
         if (IsNaiveCharacter(character + 0x20))
         {
-            //51 A0 ? ? ? ? 0F B6 15
-            return injector::cstd<float(std::uint16_t, bool)>::call(Game::AddressByVersion(0x874040), character, useextrawidth);
+            return Game::Font_GetCharacterSizeDrawing(character, useextrawidth);
         }
         else
         {
@@ -129,7 +118,7 @@ namespace Font
             return;
         }
 
-        if (-(GetCHSCharacterSizeDrawing(true) / pRenderState->fScaleX) > posx || posx > 1.0f)
+        if (-(GetCHSCharacterSizeDrawing(true) / Game::Addresses.pFont_RenderState->fScaleX) > posx || posx > 1.0f)
         {
             return;
         }
@@ -137,8 +126,8 @@ namespace Font
         auto pos = globalTable.GetCharPos(character);
 
         float sprite_width = fSpriteWidth / fTextureResolution;
-        float character_width = (fChsWidth / *pFontResX + pRenderState->fEdgeSize) * pRenderState->fScaleX;
-        float character_height = pRenderState->fScaleY * 0.06558f;
+        float character_width = (fChsWidth / *Game::Addresses.pFont_ResolutionX + Game::Addresses.pFont_RenderState->fEdgeSize) * Game::Addresses.pFont_RenderState->fScaleX;
+        float character_height = Game::Addresses.pFont_RenderState->fScaleY * 0.06558f;
 
         screenrect.fBottomLeftX = posx;
         screenrect.fBottomLeftY = posy + character_height;
@@ -154,28 +143,26 @@ namespace Font
         texturerect.fBottomLeftX = pos.column / fTextureColumnsCount;
         texturerect.fTopRightX = pos.column / fTextureColumnsCount + sprite_width;
 
-        switch (pRenderState->nFont)
+        switch (Game::Addresses.pFont_RenderState->nFont)
         {
         case 0:
         case 1:
         case 3:
-            Game::SetRenderState(pChsFont);
+            Game::Graphics_SetRenderState(pChsFont);
             break;
 
         default:
             break;
         }
 
-        //83 EC 10 8B 44 24 14 F3 0F 7E 00
-        injector::cstd<void(rageRect *, rageRect *, std::uint32_t, int)>::call(Game::AddressByVersion(0x884300), &screenrect, &texturerect, pRenderState->field_18, 0);
+        Game::Font_Render2DPrimitive(&screenrect, &texturerect, Game::Addresses.pFont_RenderState->field_18, false);
     }
 
     void PrintCharDispatch(float posx, float posy, std::uint16_t character, int mode)
     {
-        if (pRenderState->TokenType != 0 || IsNaiveCharacter(character + 0x20))
+        if (Game::Addresses.pFont_RenderState->TokenType != 0 || IsNaiveCharacter(character + 0x20))
         {
-            //83 EC 34 83 3D ? ? ? ? FF
-            injector::cstd<void(float, float, std::uint16_t, int)>::call(Game::AddressByVersion(0x8843E0), posx, posy, character, mode);
+            Game::Font_PrintChar(posx, posy, character, mode);
         }
         else
         {
@@ -203,7 +190,7 @@ namespace Font
             mov cl, [esp + 0x10BC];
             jnz normal;
             jmp chs;
-            
+
         space:
             mov edx, retaddr;
             add edx, 0xB;

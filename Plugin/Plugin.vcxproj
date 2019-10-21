@@ -89,20 +89,16 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="byte_pattern.cpp" />
-    <ClCompile Include="dictionary.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="font.cpp" />
     <ClCompile Include="game.cpp" />
-    <ClCompile Include="hash.cpp" />
     <ClCompile Include="plugin.cpp" />
     <ClCompile Include="table.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="byte_pattern.h" />
-    <ClInclude Include="dictionary.h" />
     <ClInclude Include="font.h" />
     <ClInclude Include="game.h" />
-    <ClInclude Include="hash.h" />
     <ClInclude Include="plugin.h" />
     <ClInclude Include="table.h" />
   </ItemGroup>

@@ -27,6 +27,7 @@
 #include <boost/algorithm/string.hpp>
 #include "injector/hooking.hpp"
 #include "injector/calling.hpp"
+#include "injector/utility.hpp"
 #include "utf8cpp/utf8.h"
 #include "BinaryFile.hpp"
 
